@@ -118,3 +118,48 @@
 .secondaryCta:hover {
     background-color: var(--secondary-hover);
 }
+
+.majorSection {
+    margin: 2rem 0;
+}
+
+.majorGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+}
+
+.majorCard {
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.majorCard:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.majorLink {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1.5rem;
+    text-decoration: none;
+    color: #333;
+    height: 100%;
+    width: 100%;
+}
+
+.majorIcon {
+    font-size: 2rem;
+    margin-bottom: 0.75rem;
+}
+
+.majorName {
+    font-weight: 500;
+    font-size: 1.1rem;
+    text-align: center;
+}
