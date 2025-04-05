@@ -87,7 +87,7 @@ enum Attribute {
 char* attr_str(enum Attribute a);
 
 struct Course {
-    char subject[4];
+    char subject[5];
     int number;
     char name[256];
     enum Level level;
@@ -130,23 +130,17 @@ struct Section {
 /**
  * logs in w/ given username
  */
-void login(char* user);
+int login(char* user);
 
 /**
  * returns 0 if successful addition, 1 if not
  */
-int add(int crn);
+int add(int crn, char* plan);
 
 /**
  * displays results of browse
  */
-void browse(int subject[4], int number, enum InstructionMode instruction_mode, char campus[256], char level[256], char attrs[256], char instructor[256]);
-
-/**
- * set working plan
- * blank input indicates main
- */
-void plan(char* name);
+int browse(char subject[5], int number, enum InstructionMode instruction_mode, char campus[256], char level[256], char attrs[256], char instructor[256]);
 
 /**
  * applies set plan to main
