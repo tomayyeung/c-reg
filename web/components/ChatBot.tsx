@@ -1,15 +1,13 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 import { useChat } from "../context/ChatContext";
 
 export default function ChatBot() {
-  const [isOpen, setIsOpen] = useState(false);
+  const { messages, addMessage, isOpen, toggleChat } = useChat();
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  const { messages, addMessage } = useChat();
 
   // Scroll to bottom of messages when new message is added
   useEffect(() => {
@@ -17,10 +15,6 @@ export default function ChatBot() {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [messages]);
-
-  const toggleChat = () => {
-    setIsOpen(!isOpen);
-  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setInput(e.target.value);
@@ -30,38 +24,31 @@ export default function ChatBot() {
     e.preventDefault();
     if (!input.trim()) return;
 
-    // Create a new user message
     const userMessage = {
       id: crypto.randomUUID(),
       role: "user" as const,
       content: input,
     };
 
-    // Add the user message to the global state
     addMessage(userMessage);
-    setInput(""); // Clear input
+    setInput("");
     setIsLoading(true);
 
     try {
-      // Send message to API
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          messages: [...messages, userMessage],
-        }),
+        body: JSON.stringify({ messages: [...messages, userMessage] }),
       });
 
       if (!response.ok) {
         throw new Error(`API responded with status ${response.status}`);
       }
 
-      // Parse the response
       const responseData = await response.json();
 
-      // Add the assistant's response to the global state
       addMessage({
         id: responseData.id || crypto.randomUUID(),
         role: "assistant",
@@ -74,7 +61,6 @@ export default function ChatBot() {
     }
   };
 
-  // Styles for the chat bot
   const chatBotStyles = {
     container: {
       position: "fixed" as const,
