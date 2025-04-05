@@ -29,8 +29,8 @@ export default function ComputerSciencePathway() {
   useEffect(() => {
     if (mathScore !== null) {
       if (mathScore >= 76) setMathRecommendation("MATH 109: Calculus & Analytic Geom I");
-      else if (mathScore >= 68) setMathRecommendation("MATH 108: Precalculus (Consider retaking the test to place into MATH 109)");
-      else if (mathScore >= 61) setMathRecommendation("MATH 107: Calculus for the Liberal Arts, MATH 108: Precalculus");
+      else if (mathScore >= 68) setMathRecommendation("MATH 108: Precalculus or consider retaking the test to place into MATH 109 (recommended)");
+      else if (mathScore >= 61) setMathRecommendation("MATH 108: Precalculus");
       else if (mathScore >= 46) setMathRecommendation("MATH 105: Mathematics for Educators");
       else setMathRecommendation("MATH 104: Algebra for Business & Science");
     } else {
