@@ -15,6 +15,9 @@ export default function Header() {
           <Link href="/register" className={styles.navButton}>
             Course Registration
           </Link>
+          <Link href="/pathways" className={styles.navButton}>
+            Pathways
+          </Link>
         </nav>
       </div>
     </header>
