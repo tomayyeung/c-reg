@@ -5,6 +5,7 @@
 #include <mongoc.h>
 
 #include "commands.h"
+#include "sections.h"
 #include "user.h"
 
 // makes a string lowercase in place
@@ -77,17 +78,14 @@ enum Attribute str_to_attr(char* s) {
     else if (strcmp(s, "d3") == 0 || strcmp(s, "cored3") == 0) return D3;
     else if (strcmp(s, "e") == 0 || strcmp(s, "coree") == 0) return E;
     else if (strcmp(s, "f") == 0 || strcmp(s, "coref") == 0) return F;
-    return 0;
+    return -1;
 }
 
 char* instr_mode_to_str(enum InstructionMode i) {
     switch (i) {
         case Hybrid: return "Hybrid";
         case InPerson: return "InPerson";
-        case NonTraditional: return "NonTraditional";
-        case OnlineAsynch: return "OnlineAsynch";
-        case OnlineSynch: return "OnlineSynch";
-        case Traditional: return "Traditional";
+        case Online: return "Online";
         default: return 0;
     }
 }
@@ -96,11 +94,8 @@ enum InstructionMode str_to_instr_mode(char* s) {
     to_lower(s);
     if (strcmp(s, "hybrid") == 0) return Hybrid;
     else if (strcmp(s, "inperson") == 0) return InPerson;
-    else if (strcmp(s, "nontraditional") == 0) return NonTraditional;
-    else if (strcmp(s, "onlineasynch") == 0) return OnlineAsynch;
-    else if (strcmp(s, "OnlineSynch") == 0) return OnlineSynch;
-    else if (strcmp(s, "traditional") == 0) return Traditional;
-    return 0;
+    else if (strcmp(s, "online") == 0) return Online;
+    return -1;
 }
 
 int login(char* user, mongoc_collection_t* collection) {
@@ -112,12 +107,12 @@ int login(char* user, mongoc_collection_t* collection) {
     // Perform the find operation
     mongoc_cursor_t *cursor = mongoc_collection_find_with_opts(collection, filter, NULL, NULL);
 
-    // Iterate over the cursor and print each document
+    // Iterate over the cursor
     while (mongoc_cursor_next(cursor, &reply)) {
         bson_iter_t iter;
 
         // get password
-        char* password;
+        const char* password;
         if (bson_iter_init_find(&iter, reply, "password") && BSON_ITER_HOLDS_UTF8(&iter)) {
             password = bson_iter_utf8(&iter, NULL);
         }
@@ -202,13 +197,188 @@ int add(int crn, char* plan, mongoc_collection_t* collection) {
     return 0;
 }
 
-int browse(char subject[5], int number, enum InstructionMode instruction_mode, int n_attrs, enum Attribute attrs[16], char instructor[256], int n_keywords, char** keywords) {
-    printf("searching subject: %s\n", subject);
-    printf("searching number: %d\n", number);
-    printf("searching instruction mode: %s\n", instr_mode_to_str(instruction_mode));
-    printf("searching n attrs: %d\n", n_attrs);
-    printf("searching instructor: %s\n", instructor);
-    printf("searching n keywords: %d\n", n_keywords);
+void display_sections(int n_sections, struct Section** sections) {
+    printf("nsections: %d\n", n_sections);
+    for (int i = 0; i < n_sections; i++) {
+        struct Course* c = sections[i]->course;
+        printf("Course: %s%s: %s\n", c->subject, c->number, c->name);
+    }
+}
+
+int browse(char subject[5], char* number, enum InstructionMode instruction_mode_search, int n_attrs, enum Attribute attrs[16], char instructor[256], int n_keywords, char** keywords, mongoc_collection_t* sections_collection, mongoc_collection_t* courses_collection) {
+    printf("start isntructon mode: %d\n", instruction_mode_search);
+    printf("browse subject: %s\n", subject);
+    HashTable* courses_map = init_courses(courses_collection);
+    printf("created hash table in browse\n");
+
+    struct Section* sections[MAX_BROWSE];
+    int i = 0;
+
+    // Create a filter BSON document (empty filter means all documents)
+    bson_t *filter = bson_new();  // Empty filter to fetch all documents
+    const bson_t *reply;
+    bson_error_t error;
+
+    // Perform the find operation
+    mongoc_cursor_t *cursor = mongoc_collection_find_with_opts(sections_collection, filter, NULL, NULL);
+
+    // Iterate over the cursor
+    while (mongoc_cursor_next(cursor, &reply)) {
+        // printf("loop\n");
+        if (i >= MAX_BROWSE) break;
+
+        bson_iter_t iter;
+
+        // create course from section
+        const char* iter_course;
+        if (bson_iter_init_find(&iter, reply, "course") && BSON_ITER_HOLDS_UTF8(&iter)) {
+            iter_course = bson_iter_utf8(&iter, NULL);
+        }
+        // printf("course: %s\n", iter_course);
+        struct Course* course = course_from_section(courses_map, iter_course);
+        if (course == 0) {
+            continue;
+        }
+        // printf("searching for subject: %s\n", subject);
+        // printf("current subject: %s\n", course->subject);
+
+        // search subject
+        if (*subject != 0) {
+            // printf("in if\n");
+            // printf("course name: %s\n", course->name);
+            // printf("course subject: %s\n", course->subject);
+            if (strcmp(subject, course->subject) != 0) {
+                // printf("skipped - subject: %s course->subject: %s\n", subject, course->subject);
+                continue;
+            }
+        }
+        printf("found course: %s%s\n", course->subject, course->number);
+        // printf("mid isntructon mode: %d\n", instruction_mode_search);
+
+        // search course number
+        if (number != 0) {
+            printf("course number %s\n", (course->number));
+            if (strcmp(number, course->number) != 0) continue;
+        }
+        // printf("efghhere\n");
+
+        // search instruction mode
+        int iter_instruction_mode;
+        if (bson_iter_init_find(&iter, reply, "instruction_mode") && BSON_ITER_HOLDS_INT32(&iter)) {
+            int integer = bson_iter_int32(&iter);
+            printf("reading int: %d\n", integer);
+            iter_instruction_mode = integer;
+        }
+        // printf("instruction mode right befiore check %d\n", instruction_mode_search);
+        if (instruction_mode_search != 3) {
+            printf("instruciton mode if %d\n", instruction_mode_search);
+            if (instruction_mode_search != iter_instruction_mode) continue;
+        }
+
+        // search attributes
+
+        // search instructor
+        const char* iter_instructor_first;
+        if (bson_iter_init_find(&iter, reply, "instructor_first") && BSON_ITER_HOLDS_UTF8(&iter)) {
+            iter_instructor_first = bson_iter_utf8(&iter, NULL);
+        }
+        const char* iter_instructor_last;
+        if (bson_iter_init_find(&iter, reply, "instructor_last") && BSON_ITER_HOLDS_UTF8(&iter)) {
+            iter_instructor_last = bson_iter_utf8(&iter, NULL);
+        }
+        char instructor_name[256];
+        sprintf(instructor_name, "%s %s", iter_instructor_first, iter_instructor_last);
+        printf("HERE instruction mode: %d\n", instruction_mode_search);
+        if (*instructor != 0) {
+            // printf("abcdhere\n");
+            if (strcmp(instructor, instructor_name) != 0) continue;
+        }
+        printf("passed instructionmode test %d\n", instruction_mode_search);
+
+        // grab other fields
+        int iter_section_num;
+        if (bson_iter_init_find(&iter, reply, "instructor_first") && BSON_ITER_HOLDS_INT32(&iter)) iter_section_num = bson_iter_int32(&iter);
+        const char* iter_sched_type;
+        if (bson_iter_init_find(&iter, reply, "schedule_type") && BSON_ITER_HOLDS_UTF8(&iter)) iter_sched_type = bson_iter_utf8(&iter, NULL);
+        int iter_days[7];
+        if (bson_iter_init_find(&iter, reply, "days") && BSON_ITER_HOLDS_UTF8(&iter)) {
+            // parse days
+        }
+        int iter_begin_time;
+        if (bson_iter_init_find(&iter, reply, "begin_time") && BSON_ITER_HOLDS_INT32(&iter)) iter_begin_time = bson_iter_int32(&iter);
+        int iter_end_time;
+        if (bson_iter_init_find(&iter, reply, "end_time") && BSON_ITER_HOLDS_INT32(&iter)) iter_end_time = bson_iter_int32(&iter);
+        const char* iter_start_date;
+        if (bson_iter_init_find(&iter, reply, "start_date") && BSON_ITER_HOLDS_UTF8(&iter)) iter_start_date = bson_iter_utf8(&iter, NULL);
+        const char* iter_end_date;
+        if (bson_iter_init_find(&iter, reply, "end_date") && BSON_ITER_HOLDS_UTF8(&iter)) iter_end_date = bson_iter_utf8(&iter, NULL);
+        const char* iter_building;
+        if (bson_iter_init_find(&iter, reply, "building") && BSON_ITER_HOLDS_UTF8(&iter)) iter_building = bson_iter_utf8(&iter, NULL);
+        const char* iter_room;
+        if (bson_iter_init_find(&iter, reply, "room") && BSON_ITER_HOLDS_UTF8(&iter)) iter_room = bson_iter_utf8(&iter, NULL);
+        int iter_capacity;
+        if (bson_iter_init_find(&iter, reply, "capacity") && BSON_ITER_HOLDS_INT32(&iter)) iter_capacity = bson_iter_int32(&iter);
+        int iter_enrollment;
+        if (bson_iter_init_find(&iter, reply, "enrollment") && BSON_ITER_HOLDS_INT32(&iter)) iter_enrollment = bson_iter_int32(&iter);
+        const char* iter_instructor_email;
+        if (bson_iter_init_find(&iter, reply, "instructor_email") && BSON_ITER_HOLDS_UTF8(&iter)) iter_instructor_email = bson_iter_utf8(&iter, NULL);
+        const char* iter_college;
+        if (bson_iter_init_find(&iter, reply, "college") && BSON_ITER_HOLDS_UTF8(&iter)) iter_college = bson_iter_utf8(&iter, NULL);
+        
+
+        printf("before creating s instruction mode %d\n", instruction_mode_search);
+        // search keywords
+        struct Section *s = (struct Section*) malloc(sizeof(struct Section));
+        s->course = course;
+        s->section_num = iter_section_num;
+        strcpy(s->schedule_type, iter_sched_type);
+        // printf("xyzhere\n");
+        printf("instruction mode %d\n", instruction_mode_search);
+        s->instruction_mode = (enum InstructionMode)(iter_instruction_mode);
+        // s->instruction_mode = Hybrid;
+        // printf("lmnophere\n");
+        s->days = iter_days;
+        s->begin_time = iter_begin_time;
+        s->end_time = iter_end_time;
+        strcpy(s->start_date, iter_start_date);
+        strcpy(s->end_date, iter_end_date);
+        strcpy(s->building, iter_building);
+        strcpy(s->room, iter_room);
+        s->capacity = iter_capacity;
+        s->enrollment = iter_enrollment;
+        strcpy(s->instructor_first, iter_instructor_first);
+        strcpy(s->instructor_last, iter_instructor_last);
+        strcpy(s->instructor_email, iter_instructor_email);
+        strcpy(s->college, iter_college);
+
+        printf("end isntruciton mode %d\n", instruction_mode_search);
+
+
+        sections[i++] = s;
+    }
+    printf("finished browsing\n");
+
+    if (mongoc_cursor_error(cursor, &error)) {
+        fprintf(stderr, "Cursor error: %s\n", error.message);
+        return 1;
+    }
+
+    display_sections(i, sections);
+
+    // Cleanup
+    bson_destroy(filter);
+    mongoc_cursor_destroy(cursor);
+    mongoc_collection_destroy(sections_collection);
+    mongoc_collection_destroy(courses_collection);
+    mongoc_cleanup();
+    
+    // printf("searching subject: %s\n", subject);
+    // printf("searching number: %d\n", number);
+    printf("searching instruction mode: %d\n", (instruction_mode_search));
+    // printf("searching n attrs: %d\n", n_attrs);
+    // printf("searching instructor: %s\n", instructor);
+    // printf("searching n keywords: %d\n", n_keywords);
+
     return 0;
 }
 

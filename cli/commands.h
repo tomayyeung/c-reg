@@ -7,6 +7,8 @@
 #ifndef COMMANDS
 #define COMMANDS
 
+#define MAX_BROWSE (1024)
+
 /**
  * course attributes
  */
@@ -72,20 +74,17 @@ char* attr_to_str(enum Attribute a);
 enum Attribute str_to_attr(char* s);
 
 struct Course {
-    char subject[5];
-    int number;
-    char name[256];
+    const char* subject;
+    const char* number;
+    const char* name;
     enum Attribute attributes[16];
 };
 
 enum InstructionMode {
-    INSTR_MODE_NULL_VALUE,
-    Hybrid,
     InPerson,
-    NonTraditional,
-    OnlineAsynch,
-    OnlineSynch,
-    Traditional,
+    Online,
+    Hybrid,
+    NULL_INSTRUCTION_MODE,
 };
 
 char* instr_mode_to_str(enum InstructionMode i);
@@ -96,14 +95,13 @@ struct Section {
     int section_num;
     char schedule_type[256];
     enum InstructionMode instruction_mode;
-    char meeting_type[256];
-    int days[7]; // eg MW = {1,0,1,0,0,0,0}
+    int* days; // eg MW = {1,0,1,0,0,0,0}
     int begin_time;
     int end_time;
     char start_date[256];
     char end_date[256];
     char building[256];
-    int room;
+    char room[16];
     int capacity;
     int enrollment;
     char instructor_first[256];
@@ -128,7 +126,7 @@ int add(int crn, char* plan, mongoc_collection_t* collection);
  * displays results of browse - sections
  * returns 1 if error
  */
-int browse(char subject[5], int number, enum InstructionMode instruction_mode, int n_attrs, enum Attribute attrs[16], char instructor[256], int n_keywords, char** keywords);
+int browse(char subject[5], char* number, enum InstructionMode instruction_mode, int n_attrs, enum Attribute attrs[16], char instructor[256], int n_keywords, char** keywords, mongoc_collection_t* sections_collection, mongoc_collection_t* courses_collection);
 
 /**
  * applies set plan to main

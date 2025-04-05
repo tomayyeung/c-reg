@@ -70,13 +70,16 @@ int handle_add(int argc, char** argv, mongoc_client_t* client) {
 }
 
 int handle_browse(int argc, char** argv, mongoc_client_t* client) {
+    mongoc_collection_t* sections_collection = mongoc_client_get_collection(client, "c-reg_DB", "sections");
+    mongoc_collection_t* courses_collection = mongoc_client_get_collection(client, "c-reg_DB", "courses");
+
     // options
-    char* subject = "";
-    int number = 0;
-    enum InstructionMode instruction;
+    char subject[5];
+    char number[16];
+    enum InstructionMode instruction = 3;
     int n_attrs = 0;
     enum Attribute attrs[16];
-    char instructor[256];
+    char instructor[256] = "";
     int n_keywords = 0;
     char** keywords;
 
@@ -101,13 +104,14 @@ int handle_browse(int argc, char** argv, mongoc_client_t* client) {
     while ((opt = getopt_long(argc, argv, short_options, long_options, NULL)) != -1) {
         switch (opt) {
             case 's':
-                subject = optarg;
+                strcpy(subject, optarg);
                 break;
 
             case 'n':
-                if ((number = atoi(optarg)) == 0) {
-                    fprintf(stderr, "Invalid argument for creg browse --number\n");
-                }
+                // if ((number = atoi(optarg)) == 0) {
+                //     fprintf(stderr, "Invalid argument for creg browse --number\n");
+                // }
+                strcpy(number, optarg);
                 break;
 
             case 'I':
@@ -184,7 +188,7 @@ int handle_browse(int argc, char** argv, mongoc_client_t* client) {
         }
     }
 
-    return browse(subject, number, instruction, n_attrs, attrs, instructor, n_keywords, keywords);
+    return browse(subject, number, instruction, n_attrs, attrs, instructor, n_keywords, keywords, sections_collection, courses_collection);
 }
 
 int main(int argc, char** argv) {
