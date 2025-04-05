@@ -18,6 +18,10 @@ export default function Header() {
           <Link href="/pathways" className={styles.navButton}>
             Pathways
           </Link>
+          <Link href="/login" className={styles.navButton}>
+            login
+          </Link>
+          
         </nav>
       </div>
     </header>
