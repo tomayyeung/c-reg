@@ -128,9 +128,9 @@ struct Section {
 };
 
 /**
- * returns 0 if successful login, 1 if not
+ * logs in w/ given username
  */
-int login(char* user);
+void login(char* user);
 
 /**
  * returns 0 if successful addition, 1 if not
