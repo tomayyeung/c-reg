@@ -155,7 +155,7 @@ export default function ChatBot() {
     <div style={chatBotStyles.container}>
       {isOpen && (
         <div style={chatBotStyles.chatWindow}>
-          <div style={chatBotStyles.header}>creg Chatbot</div>
+          <div style={chatBotStyles.header}>Craig</div>
           <div style={chatBotStyles.messagesContainer}>
             {messages.length === 0 && (
               <div style={{ textAlign: "center", color: "#666", margin: "20px 0" }}>
@@ -177,7 +177,7 @@ export default function ChatBot() {
             ))}
             {isLoading && (
               <div style={{ textAlign: "center", color: "#666", margin: "10px 0" }}>
-                AI is thinking...
+                Craig is thinking...
               </div>
             )}
             <div ref={messagesEndRef} />
