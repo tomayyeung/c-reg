@@ -241,16 +241,39 @@
     flex-wrap: wrap;
 }
 
+.majorList {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    margin-top: 1.5rem;
+    font-size: 1.1rem;
+    list-style-type: disc;
+}
+
+.majorItem {
+    margin-bottom: 0.5rem;
+    padding-left: 0.5rem;
+}
+
 .majorLink {
+    text-decoration: none;
     color: var(--primary-color);
-    font-weight: 600;
-    transition: all 0.2s ease;
-    margin: 100px 5px;
+    transition: color 0.2s ease;
 }
 
 .majorLink:hover {
     color: var(--primary-color-dark);
     text-decoration: underline;
+}
+
+.majorName {
+    font-weight: 500;
+}
+
+@media (max-width: 640px) {
+    .majorList {
+        grid-template-columns: 1fr;
+    }
 }
 
 /* Responsive adjustments */
