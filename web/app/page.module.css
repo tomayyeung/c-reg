@@ -14,6 +14,13 @@
     background-color: var(--background-color);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     z-index: 100;
+
+    /* Flexbox styles */
+    display: flex;
+    align-items: center;
+    /* Align items vertically in the center */
+    justify-content: space-between;
+    padding: 0 20px;
 }
 
 .container {
@@ -26,10 +33,6 @@
     align-items: center;
 }
 
-.header .container {
-    justify-content: space-between;
-}
-
 .logo {
     font-size: 28px;
     font-weight: 700;
@@ -40,6 +43,7 @@
 .nav {
     display: flex;
     gap: 16px;
+    margin-left: auto;
 }
 
 .navButton {
@@ -54,6 +58,15 @@
 .navButton:hover {
     background-color: var(--secondary-background);
     color: var(--primary-color);
+}
+
+.username {
+    padding: 10px 16px;
+    border-radius: 6px;
+    font-weight: 500;
+    text-decoration: none;
+    color: var(--text-color);
+    cursor: default;
 }
 
 /* Main Content Styles */
@@ -169,62 +182,63 @@
     width: 100%;
     height: 100vh;
     overflow: hidden;
-  }
-  
-  .heroImage {
+}
+
+.heroImage {
     width: 100%;
     height: 100%;
     object-fit: cover;
-  }
-  
-  .heroOverlay {
+}
+
+.heroOverlay {
     position: absolute;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.4); /* optional dark overlay */
+    background: rgba(0, 0, 0, 0.4);
+    /* optional dark overlay */
     display: flex;
     align-items: center;
     justify-content: center;
-  }
-  
-  .heroText {
+}
+
+.heroText {
     color: white;
     font-size: 4rem;
     font-family: serif;
     text-shadow: 2px 2px 6px rgba(0, 0, 0, 0.5);
-  }
+}
 
 
 
 
 /* Animation */
 @keyframes fadeDropIn {
-0% {
-    opacity: 0;
-    transform: translateY(-20px);
-}
-100% {
-    opacity: 1;
-    transform: translateY(0);
-}
+    0% {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .animateFadeDrop {
-animation: fadeDropIn 0.8s ease-out forwards;
-opacity: 0;
+    animation: fadeDropIn 0.8s ease-out forwards;
+    opacity: 0;
 }
 
 .delay-1 {
-animation-delay: 0.2s;
+    animation-delay: 0.2s;
 }
 
 .delay-2 {
-animation-delay: 0.4s;
+    animation-delay: 0.4s;
 }
 
 .delay-3 {
-animation-delay: 0.6s;
+    animation-delay: 0.6s;
 }
-
