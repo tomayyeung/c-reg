@@ -22,7 +22,7 @@ enum Level {
     Undergraduate,
 };
 
-char* levelStr(enum Level l);
+char* level_str(enum Level l);
 
 /**
  * course attributes
@@ -84,7 +84,7 @@ enum Attribute {
     // UG MNR GSS
 };
 
-char* attrStr(enum Attribute a);
+char* attr_str(enum Attribute a);
 
 struct Course {
     char subject[4];
@@ -103,27 +103,27 @@ enum InstructionMode {
     Traditional,
 };
 
-char* instrModeStr(enum InstructionMode i);
+char* instr_mode_str(enum InstructionMode i);
 
 struct Section {
     struct Course* course;
-    int sectionNum;
-    char scheduleType[256];
+    int section_num;
+    char schedule_type[256];
     char campus[256];
-    enum InstructionMode instructionMode;
-    char meetingType [256];
+    enum InstructionMode instruction_mode;
+    char meeting_type[256];
     int days[7]; // eg MW = {1,0,1,0,0,0,0}
-    int beginTime;
-    int endTime;
-    char startDate[256];
-    char endDate[256];
+    int begin_time;
+    int end_time;
+    char start_date[256];
+    char end_date[256];
     char building[256];
     int room;
     int capacity;
     int enrollment;
-    char instructorFirst[256];
-    char instructorLast[256];
-    char instructorEmail[256];
+    char instructor_first[256];
+    char instructor_last[256];
+    char instructor_email[256];
     char college[256];
 };
 
@@ -140,7 +140,7 @@ int add(int crn);
 /**
  * displays results of browse
  */
-void browse(int subject[4], int number, enum InstructionMode instructionMode, char campus[256], char level[256], char attrs[256], char instructor[256]);
+void browse(int subject[4], int number, enum InstructionMode instruction_mode, char campus[256], char level[256], char attrs[256], char instructor[256]);
 
 /**
  * set working plan
@@ -151,7 +151,7 @@ void plan(char* name);
 /**
  * applies set plan to main
  */
-void apply(char* planName);
+void apply(char* plan_name);
 
 /**
  * searches catalog (not necessarily what's offered this sem)
