@@ -140,6 +140,71 @@ int rm(int crn, char* plan, mongoc_collection_t* collection) {
     return success ? 0 : 1;
 }
 
+int view(char* plan, mongoc_collection_t* collection) {
+    char* username = load_username();
+    if (username == NULL) {
+        fprintf(stderr, "Not logged in\n");
+        return 1;
+    }
+
+    bson_t *query;
+    mongoc_cursor_t *cursor;
+    const bson_t *doc;
+    bson_iter_t iter, plans_iter, array_iter;
+    bson_error_t error;
+
+    // Build query: { "name": "thomas" }
+    query = BCON_NEW("name", BCON_UTF8(username));
+
+    // Execute query
+    cursor = mongoc_collection_find_with_opts(collection, query, NULL, NULL);
+    if (!mongoc_cursor_next(cursor, &doc)) {
+        fprintf(stderr, "User not found or no plans.\n");
+        mongoc_cursor_destroy(cursor);
+        bson_destroy(query);
+        return 1;
+    }
+
+    // Navigate to "plans.{plan_name}"
+    if (!(bson_iter_init_find(&iter, doc, "plans") &&
+            BSON_ITER_HOLDS_DOCUMENT(&iter) &&
+            bson_iter_recurse(&iter, &plans_iter))) {
+        fprintf(stderr, "'plans' field missing or invalid.\n");
+        mongoc_cursor_destroy(cursor);
+        bson_destroy(query);
+        return 1;
+    }
+
+    bool found = false;
+    while (bson_iter_next(&plans_iter)) {
+        if (strcmp(bson_iter_key(&plans_iter), plan) == 0 &&
+            BSON_ITER_HOLDS_ARRAY(&plans_iter)) {
+            found = true;
+            if (bson_iter_recurse(&plans_iter, &array_iter)) {
+                printf("Plan '%s':\n", plan);
+                while (bson_iter_next(&array_iter)) {
+                    if (BSON_ITER_HOLDS_INT32(&array_iter)) {
+                        printf(" - %d\n", bson_iter_int32(&array_iter));
+                    } else {
+                        fprintf(stderr, " non-int element found\n");
+                        return 1;
+                    }
+                }
+            }
+            break;
+        }
+    }
+
+    if (!found) {
+        fprintf(stderr, "Plan '%s' not found.\n", plan);
+    }
+
+    mongoc_cursor_destroy(cursor);
+    bson_destroy(query);
+    return found ? 0 : 1;
+}
+
+
 int browse(char subject[5], char number[16], enum InstructionMode instruction_mode_search, int n_attrs, enum Attribute attrs[16], char instructor[256], int n_keywords, char** keywords, mongoc_collection_t* sections_collection, mongoc_collection_t* courses_collection) {
     // printf("start isntructon mode: %d\n", instruction_mode_search);
     // printf("browse subject: %s\n", subject);

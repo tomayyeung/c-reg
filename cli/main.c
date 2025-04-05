@@ -105,6 +105,12 @@ int handle_rm(int argc, char** argv, mongoc_client_t* client) {
     return rm(crn, plan, collection);    
 }
 
+int handle_view(int argc, char** argv, mongoc_client_t* client) {
+    char* plan = argc > 2 ? argv[2] : "main";
+    mongoc_collection_t* collection = mongoc_client_get_collection(client, "c-reg_DB", "plans");
+    return view(plan, collection);    
+}
+
 int handle_browse(int argc, char** argv, mongoc_client_t* client) {
     mongoc_collection_t* sections_collection = mongoc_client_get_collection(client, "c-reg_DB", "sections");
     mongoc_collection_t* courses_collection = mongoc_client_get_collection(client, "c-reg_DB", "courses");
@@ -263,17 +269,19 @@ int main(int argc, char** argv) {
     // handle commands
     const char* command = argv[1];
     if (strcmp(command, "login") == 0) {
-        handle_login(argc, argv, client);
+       return handle_login(argc, argv, client);
     } else if (strcmp(command, "add") == 0) {
-        handle_add(argc, argv, client);
+        return handle_add(argc, argv, client);
     } else if (strcmp(command, "rm") == 0) {
-        handle_rm(argc, argv, client);
+        return handle_rm(argc, argv, client);
+    } else if (strcmp(command, "view") == 0) {
+        return handle_view(argc, argv, client);
     } else if (strcmp(command, "browse") == 0) {
-        handle_browse(argc, argv, client);
+        return handle_browse(argc, argv, client);
     } else if (strcmp(command, "logout") == 0) {
-        handle_logout();
+        return handle_logout();
     } else if (strcmp(command, "apply") == 0) {
-        handle_apply(argc, argv, client);
+        return handle_apply(argc, argv, client);
     }
     else {
         fprintf(stderr, "Unknown command: %s\n", command);

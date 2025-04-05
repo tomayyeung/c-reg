@@ -118,6 +118,8 @@ int add(int crn, char* plan, mongoc_collection_t* collection);
 
 int rm(int crn, char* plan, mongoc_collection_t* collection);
 
+int view(char* plan, mongoc_collection_t* collection);
+
 /**
  * displays results of browse - sections
  * returns 1 if error
