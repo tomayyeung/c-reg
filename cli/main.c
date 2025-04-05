@@ -4,6 +4,7 @@
 #include <getopt.h>
 
 #include "commands.h"
+#include "commands_helper.h"
 
 void print_help() {
     printf("Usage: [-h | --help] creg <command> [<args>]");
@@ -69,13 +70,48 @@ int handle_add(int argc, char** argv, mongoc_client_t* client) {
     return add(crn, plan, collection);
 }
 
+int handle_rm(int argc, char** argv, mongoc_client_t* client) {
+    if (argc < 3) {
+        fprintf(stderr, "No argument found for creg rm\n");
+        return 1;
+    }
+
+    int crn = atoi(argv[2]);
+    if (crn == 0) {
+        fprintf(stderr, "Could not read CRN for creg rm\n");
+        return 1;
+    }
+
+    char plan[256];
+    strcpy(plan, "main");
+
+    static struct option long_options[] = {
+        {"plan", required_argument, 0, 'p'},
+    };
+    const char* short_options = "p:";
+
+    int opt;
+    optind = 2; // skip program and command
+    while ((opt = getopt_long(argc, argv, short_options, long_options, NULL)) != -1) {
+        switch (opt) {
+            case 'p':
+                strncpy(plan,  optarg, 256);
+                break;
+        }
+    }
+
+    mongoc_collection_t* collection = mongoc_client_get_collection(client, "c-reg_DB", "plans");
+
+    return rm(crn, plan, collection);    
+}
+
 int handle_browse(int argc, char** argv, mongoc_client_t* client) {
     mongoc_collection_t* sections_collection = mongoc_client_get_collection(client, "c-reg_DB", "sections");
     mongoc_collection_t* courses_collection = mongoc_client_get_collection(client, "c-reg_DB", "courses");
 
     // options
-    char subject[5];
-    char number[16];
+    char subject[5] = "";
+    char number[16] = "";
     enum InstructionMode instruction = 3;
     int n_attrs = 0;
     enum Attribute attrs[16];
@@ -115,10 +151,11 @@ int handle_browse(int argc, char** argv, mongoc_client_t* client) {
                 break;
 
             case 'I':
-                if ((instruction = str_to_instr_mode(optarg)) == 0) {
+                if ((instruction = str_to_instr_mode(optarg)) == -1) {
                     fprintf(stderr, "Invalid argument for creg browse --instruction\n");
                     return 1;
                 }
+                // printf("instruction %d\n", instruction);
                 break;
 
             case 'a': // segfaults on incorrect input
@@ -191,6 +228,17 @@ int handle_browse(int argc, char** argv, mongoc_client_t* client) {
     return browse(subject, number, instruction, n_attrs, attrs, instructor, n_keywords, keywords, sections_collection, courses_collection);
 }
 
+int handle_apply(int argc, char** argv, mongoc_client_t* client) {
+    if (argc < 3) {
+        fprintf(stderr, "No argument found for creg apply\n");
+        return 1;
+    }
+
+
+    mongoc_collection_t* collection = mongoc_client_get_collection(client, "c-reg_DB", "plans");
+    return apply(argv[2], collection);
+}
+
 int main(int argc, char** argv) {
     if (argc < 2) {
         print_help();
@@ -218,10 +266,14 @@ int main(int argc, char** argv) {
         handle_login(argc, argv, client);
     } else if (strcmp(command, "add") == 0) {
         handle_add(argc, argv, client);
+    } else if (strcmp(command, "rm") == 0) {
+        handle_rm(argc, argv, client);
     } else if (strcmp(command, "browse") == 0) {
         handle_browse(argc, argv, client);
     } else if (strcmp(command, "logout") == 0) {
         handle_logout();
+    } else if (strcmp(command, "apply") == 0) {
+        handle_apply(argc, argv, client);
     }
     else {
         fprintf(stderr, "Unknown command: %s\n", command);

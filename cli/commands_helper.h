@@ -1,0 +1,14 @@
+#ifndef COMMANDS_HELPER
+#define COMMANDS_HELPER
+
+void to_lower(char* s);
+void get_password(char* password, int max_len);
+char* attr_to_str(enum Attribute a);
+enum Attribute str_to_attr(char* s);
+char* instr_mode_to_str(enum InstructionMode i);
+enum InstructionMode str_to_instr_mode(char* s);
+int* days_str_to_arr(const char* s);
+void days_arr_to_str(char* buf, int* a);
+void display_sections(int n_sections, struct Section** sections);
+
+#endif

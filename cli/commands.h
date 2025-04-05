@@ -70,9 +70,6 @@ enum Attribute {
     // UG MNR GSS
 };
 
-char* attr_to_str(enum Attribute a);
-enum Attribute str_to_attr(char* s);
-
 struct Course {
     const char* subject;
     const char* number;
@@ -86,9 +83,6 @@ enum InstructionMode {
     Hybrid,
     NULL_INSTRUCTION_MODE,
 };
-
-char* instr_mode_to_str(enum InstructionMode i);
-enum InstructionMode str_to_instr_mode(char* s);
 
 struct Section {
     struct Course* course;
@@ -122,17 +116,19 @@ int logout();
  */
 int add(int crn, char* plan, mongoc_collection_t* collection);
 
+int rm(int crn, char* plan, mongoc_collection_t* collection);
+
 /**
  * displays results of browse - sections
  * returns 1 if error
  */
-int browse(char subject[5], char* number, enum InstructionMode instruction_mode, int n_attrs, enum Attribute attrs[16], char instructor[256], int n_keywords, char** keywords, mongoc_collection_t* sections_collection, mongoc_collection_t* courses_collection);
+int browse(char subject[5], char number[16], enum InstructionMode instruction_mode, int n_attrs, enum Attribute attrs[16], char instructor[256], int n_keywords, char** keywords, mongoc_collection_t* sections_collection, mongoc_collection_t* courses_collection);
 
 /**
  * applies set plan to main
  * returns 1 if error
  */
-int apply(char* plan_name);
+int apply(char* plan_name, mongoc_collection_t *collection);
 
 /**
  * searches catalog (not necessarily what's offered this sem)
