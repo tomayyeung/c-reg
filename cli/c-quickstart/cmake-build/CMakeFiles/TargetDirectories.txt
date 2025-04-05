@@ -1,0 +1,4 @@
+/Users/leozhang/Desktop/c-reg/c-reg/cli/c-quickstart/cmake-build/CMakeFiles/quickstart.out.dir
+/Users/leozhang/Desktop/c-reg/c-reg/cli/c-quickstart/cmake-build/CMakeFiles/insertCourse.out.dir
+/Users/leozhang/Desktop/c-reg/c-reg/cli/c-quickstart/cmake-build/CMakeFiles/edit_cache.dir
+/Users/leozhang/Desktop/c-reg/c-reg/cli/c-quickstart/cmake-build/CMakeFiles/rebuild_cache.dir
