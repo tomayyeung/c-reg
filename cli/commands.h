@@ -122,7 +122,7 @@ int logout();
 /**
  * returns 0 if successful addition, 1 if not
  */
-int add(int crn, char* plan);
+int add(int crn, char* plan, mongoc_collection_t* collection);
 
 /**
  * displays results of browse - sections

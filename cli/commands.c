@@ -161,8 +161,44 @@ int logout() {
     return remove(get_user_file_path());
 }
 
-int add(int crn, char* plan) {
+int add(int crn, char* plan, mongoc_collection_t* collection) {
+    char* username = load_username();
+    if (username == NULL) {
+        fprintf(stderr, "Not logged in\n");
+        return 1;
+    }
+
+    bson_t *query, *update, child;
+    bson_error_t error;
+
+    char working_plan[256];
+    if (*plan == 0) strcpy(working_plan, "main");
+    else strcpy(working_plan, plan);
+
+    // Build the field path: plans.<plan_name>
+    char field_path[128];
+    snprintf(field_path, sizeof(field_path), "plans.%s", working_plan);
+
+    // Find the document with matching name
+    query = BCON_NEW("name", BCON_UTF8(username));
+
+    // Build the update: $push: { "plans.<plan_name>": new_id }
+    update = bson_new();
+    BSON_APPEND_DOCUMENT_BEGIN(update, "$push", &child);
+    BSON_APPEND_INT32(&child, field_path, crn);
+    bson_append_document_end(update, &child);
+
+    // Execute update
+    if (!mongoc_collection_update_one(collection, query, update, NULL, NULL, &error)) {
+        fprintf(stderr, "Addition to plan failed: %s\n", error.message);
+        bson_destroy(query);
+        bson_destroy(update);
+        return 1;
+    }
+
     printf("added crn: %d to plan: %s\n", crn, plan);
+    bson_destroy(query);
+    bson_destroy(update);
     return 0;
 }
 

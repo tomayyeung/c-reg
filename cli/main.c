@@ -45,13 +45,28 @@ int handle_add(int argc, char** argv, mongoc_client_t* client) {
         fprintf(stderr, "Could not read CRN for creg add\n");
         return 1;
     }
-    
-    if (argc == 3) { // main plan
-        add(crn, "");
-    } else {
-        add(crn, argv[3]);
+
+    char plan[256];
+    strcpy(plan, "main");
+
+    static struct option long_options[] = {
+        {"plan", required_argument, 0, 'p'},
+    };
+    const char* short_options = "p:";
+
+    int opt;
+    optind = 2; // skip program and command
+    while ((opt = getopt_long(argc, argv, short_options, long_options, NULL)) != -1) {
+        switch (opt) {
+            case 'p':
+                strncpy(plan,  optarg, 256);
+                break;
+        }
     }
-    return 0;
+
+    mongoc_collection_t* collection = mongoc_client_get_collection(client, "c-reg_DB", "plans");
+
+    return add(crn, plan, collection);
 }
 
 int handle_browse(int argc, char** argv, mongoc_client_t* client) {
