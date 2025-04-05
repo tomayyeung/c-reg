@@ -9,6 +9,7 @@ void print_help() {
     printf("Usage: [-h | --help] creg <command> [<args>]");
     printf("\nCommands:\n");
     printf("  login     Login using your USF ID\n");
+    printf("  logout    Log out from creg\n");
     printf("  add       Add a course to main or current plan\n");
     printf("  browse    Search for classes offered this semester\n");
     printf("  plan      Set working plan\n");
@@ -27,6 +28,10 @@ int handle_login(int argc, char** argv, mongoc_client_t* client) {
     mongoc_collection_t* collection = mongoc_client_get_collection(client, "c-reg_DB", "users");
     
     return login(argv[2], collection);
+}
+
+int handle_logout() {
+    return logout();
 }
 
 int handle_add(int argc, char** argv, mongoc_client_t* client) {
@@ -196,6 +201,8 @@ int main(int argc, char** argv) {
         handle_add(argc, argv, client);
     } else if (strcmp(command, "browse") == 0) {
         handle_browse(argc, argv, client);
+    } else if (strcmp(command, "logout") == 0) {
+        handle_logout();
     }
     else {
         fprintf(stderr, "Unknown command: %s\n", command);

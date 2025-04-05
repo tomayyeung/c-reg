@@ -117,6 +117,8 @@ struct Section {
  */
 int login(char* user, mongoc_collection_t* collection);
 
+int logout();
+
 /**
  * returns 0 if successful addition, 1 if not
  */

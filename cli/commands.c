@@ -1,9 +1,11 @@
 #include <stdio.h>
 #include <string.h>
+#include <termios.h>
 #include <bson.h>
 #include <mongoc.h>
 
 #include "commands.h"
+#include "user.h"
 
 // makes a string lowercase in place
 void to_lower(char* s) {
@@ -11,6 +13,28 @@ void to_lower(char* s) {
         if (*s >= 'A' && *s <= 'Z') *s += 'a' - 'A';
         s++;
     }
+}
+
+void get_password(char* password, int max_len) {
+    struct termios oldt, newt;
+    printf("Enter password: ");
+    fflush(stdout);
+
+    // Turn echoing off
+    tcgetattr(STDIN_FILENO, &oldt);
+    newt = oldt;
+    newt.c_lflag &= ~(ECHO);
+    tcsetattr(STDIN_FILENO, TCSANOW, &newt);
+
+    // Get password
+    fgets(password, max_len, stdin);
+
+    // Turn echoing back on
+    tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
+    printf("\n");
+
+    // Remove newline
+    password[strcspn(password, "\n")] = 0;
 }
 
 // TO COMPLETE
@@ -90,9 +114,33 @@ int login(char* user, mongoc_collection_t* collection) {
 
     // Iterate over the cursor and print each document
     while (mongoc_cursor_next(cursor, &reply)) {
-        char *str = bson_as_canonical_extended_json(reply, NULL);
-        printf("%s\n", str);
-        bson_free(str);
+        bson_iter_t iter;
+
+        // get password
+        char* password;
+        if (bson_iter_init_find(&iter, reply, "password") && BSON_ITER_HOLDS_UTF8(&iter)) {
+            password = bson_iter_utf8(&iter, NULL);
+        }
+
+        // get username
+        if (bson_iter_init_find(&iter, reply, "name") && BSON_ITER_HOLDS_UTF8(&iter)) {
+            const char *username = bson_iter_utf8(&iter, NULL);
+            if (strcmp(user, username) != 0) {
+                continue;
+            }
+
+            // get password input
+            char password_in[128];
+            get_password(password_in, sizeof(password_in));
+            if (strcmp(password, password_in) != 0) {
+                fprintf(stderr, "Wrong password\n");
+                return 1;
+            }
+
+            printf("saving username\n");
+            
+            save_username(user);
+        }
     }
 
     if (mongoc_cursor_error(cursor, &error)) {
@@ -107,6 +155,10 @@ int login(char* user, mongoc_collection_t* collection) {
 
     printf("login in commands.c\n");
     return 0;
+}
+
+int logout() {
+    return remove(get_user_file_path());
 }
 
 int add(int crn, char* plan) {
