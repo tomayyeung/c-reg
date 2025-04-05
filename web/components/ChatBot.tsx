@@ -1,55 +1,46 @@
-"use client"
+"use client";
 
-import { useState, useRef, useEffect } from "react"
-
-interface Message {
-  id: string;
-  role: 'user' | 'assistant';
-  content: string;
-}
+import { useState, useRef, useEffect } from "react";
+import { useChat } from "../context/ChatContext";
 
 export default function ChatBot() {
-  const [isOpen, setIsOpen] = useState(false)
-  const [messages, setMessages] = useState<Message[]>([])
-  const [input, setInput] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
-  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const [isOpen, setIsOpen] = useState(false);
+  const [input, setInput] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Debug: Log messages when they change
-  useEffect(() => {
-    console.log("Current messages:", messages);
-  }, [messages]);
+  const { messages, addMessage } = useChat();
 
   // Scroll to bottom of messages when new message is added
   useEffect(() => {
     if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: "smooth" })
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
-  }, [messages])
+  }, [messages]);
 
   const toggleChat = () => {
-    setIsOpen(!isOpen)
-  }
+    setIsOpen(!isOpen);
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setInput(e.target.value)
-  }
+    setInput(e.target.value);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!input.trim()) return
+    e.preventDefault();
+    if (!input.trim()) return;
 
     // Create a new user message
-    const userMessage: Message = {
+    const userMessage = {
       id: crypto.randomUUID(),
-      role: 'user',
-      content: input
-    }
+      role: "user" as const,
+      content: input,
+    };
 
-    // Update messages with the new user message
-    setMessages((prev) => [...prev, userMessage])
-    setInput("") // Clear input
-    setIsLoading(true)
+    // Add the user message to the global state
+    addMessage(userMessage);
+    setInput(""); // Clear input
+    setIsLoading(true);
 
     try {
       // Send message to API
@@ -59,31 +50,31 @@ export default function ChatBot() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          messages: [...messages, userMessage]
+          messages: [...messages, userMessage],
         }),
-      })
+      });
 
       if (!response.ok) {
-        throw new Error(`API responded with status ${response.status}`)
+        throw new Error(`API responded with status ${response.status}`);
       }
 
       // Parse the response
-      const responseData = await response.json()
-      console.log("Chat finished with message:", responseData);
+      const responseData = await response.json();
 
-      // Add the assistant's response to the messages
-      setMessages((prev) => [...prev, {
+      // Add the assistant's response to the global state
+      addMessage({
         id: responseData.id || crypto.randomUUID(),
-        role: responseData.role || 'assistant',
-        content: responseData.content
-      }])
+        role: "assistant",
+        content: responseData.content,
+      });
     } catch (err) {
-      console.error("Chat error:", err)
+      console.error("Chat error:", err);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
+  // Styles for the chat bot
   const chatBotStyles = {
     container: {
       position: "fixed" as const,
@@ -98,7 +89,7 @@ export default function ChatBot() {
       width: "60px",
       height: "60px",
       borderRadius: "50%",
-      backgroundColor: "#0070f3",
+      backgroundColor: "#008000",
       color: "white",
       display: "flex",
       justifyContent: "center",
@@ -121,7 +112,7 @@ export default function ChatBot() {
     },
     header: {
       padding: "15px",
-      backgroundColor: "#0070f3",
+      backgroundColor: "#008000",
       color: "white",
       fontWeight: "bold",
       borderTopLeftRadius: "10px",
@@ -166,29 +157,33 @@ export default function ChatBot() {
     sendButton: {
       marginLeft: "10px",
       padding: "10px 15px",
-      backgroundColor: "#0070f3",
+      backgroundColor: "#008000",
       color: "white",
       border: "none",
       borderRadius: "20px",
       cursor: "pointer",
     },
-  }
+  };
 
   return (
     <div style={chatBotStyles.container}>
       {isOpen && (
         <div style={chatBotStyles.chatWindow}>
-          <div style={chatBotStyles.header}>Chat Assistant</div>
+          <div style={chatBotStyles.header}>creg Chatbot</div>
           <div style={chatBotStyles.messagesContainer}>
             {messages.length === 0 && (
-              <div style={{ textAlign: "center", color: "#666", margin: "20px 0" }}>How can I help you today?</div>
+              <div style={{ textAlign: "center", color: "#666", margin: "20px 0" }}>
+                How can I help you today?
+              </div>
             )}
             {messages.map((message) => (
               <div
                 key={message.id}
                 style={{
                   ...chatBotStyles.message,
-                  ...(message.role === "user" ? chatBotStyles.userMessage : chatBotStyles.botMessage),
+                  ...(message.role === "user"
+                    ? chatBotStyles.userMessage
+                    : chatBotStyles.botMessage),
                 }}
               >
                 {message.content}
@@ -214,9 +209,13 @@ export default function ChatBot() {
           </form>
         </div>
       )}
-      <button onClick={toggleChat} style={chatBotStyles.chatButton} aria-label={isOpen ? "Close chat" : "Open chat"}>
+      <button
+        onClick={toggleChat}
+        style={chatBotStyles.chatButton}
+        aria-label={isOpen ? "Close chat" : "Open chat"}
+      >
         {isOpen ? "×" : "💬"}
       </button>
     </div>
-  )
+  );
 }

@@ -1,11 +1,13 @@
 import Link from "next/link";
-import Header from "../../../components/Header";
+import Header from "@/components/Header";
+import ChatBot from "@/components/ChatBot";
 import styles from "../page.module.css";
 
 export default function GraduationRequirements() {
   return (
     <>
       <Header />
+      <ChatBot />
 
       <div className={styles.container}>
         <div className={styles.main}>

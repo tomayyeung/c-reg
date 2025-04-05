@@ -1,6 +1,7 @@
 import "./globals.css";
 import styles from "./page.module.css";
 import type { Metadata } from "next";
+import { ChatProvider } from "../context/ChatContext";
 
 export const metadata: Metadata = {
   title: 'creg',
@@ -17,7 +18,7 @@ export default function RootLayout({
       <body>
         <div className={styles.page}>
           <main>
-            {children}
+            <ChatProvider>{children}</ChatProvider>
           </main>
         </div>
       </body>
