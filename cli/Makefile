@@ -1,2 +1,2 @@
 creg: commands.c commands.h main.c
-	gcc commands.c main.c -o creg
+	cmake --build cmake-build --target creg
