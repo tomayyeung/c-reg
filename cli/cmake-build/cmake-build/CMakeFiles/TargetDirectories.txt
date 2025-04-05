@@ -1,3 +1,0 @@
-/Users/Thomas/Desktop/cs/with_others/c-reg/cli/cmake-build/cmake-build/CMakeFiles/creg.dir
-/Users/Thomas/Desktop/cs/with_others/c-reg/cli/cmake-build/cmake-build/CMakeFiles/edit_cache.dir
-/Users/Thomas/Desktop/cs/with_others/c-reg/cli/cmake-build/cmake-build/CMakeFiles/rebuild_cache.dir
