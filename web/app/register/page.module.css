@@ -11,10 +11,27 @@
     justify-content: flex-start;
     align-items: center;
     padding: 2rem;
+    z-index: 1;
   }
   .heroImage{
     margin-top: 6rem;
-    margin-bottom: 6rem;
+    margin-bottom: 3rem;
+  }
+  .homeButton {
+    margin-top: 2rem;
+    padding: 0.75rem 2rem;
+    border: 2px solid #fcbb2b;
+    background-color: transparent;
+    color: #ffffff;
+    font-weight: 600;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+  }
+  
+  .homeButton:hover {
+    background-color: #fcbb2b;
+    color: #08543c;
   }
 
 
@@ -24,13 +41,24 @@
     display: flex;
     justify-self: center;
     align-items: center;
-    padding: 2rem;
+    padding: 10rem;
     overflow-y: auto; 
     background-image: url("/USFBackground.jpg");
-    background-color: #000000;
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
+  }
+  .mainContent::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.5); 
+    z-index: 0;
+  }
+  
+  .mainContent > * {
+    position: relative;
+    z-index: 1;
   }
 
   .header {
@@ -41,7 +69,7 @@
     font-size: 2rem;
     font-weight: bold;
     color: #ffffff;
-    margin-bottom: 0.5rem;
+    margin-bottom: 2rem;
   }
 
   .logoutButton {
@@ -66,7 +94,7 @@
   .grid {
     display: grid;
     grid-template-columns: repeat(1, 1fr);
-    gap: 3rem;
+    gap: 5rem 10rem;
   }
   
   @media (min-width: 768px) {
@@ -77,12 +105,15 @@
   
   .card {
     display: flex;
-    align-items: flex-start;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
     gap: 1rem;
     padding: 1.5rem;
-    background-color: white;
+    background-color: rgba(255, 255, 255, 0.766);
     border: 1px solid #e5e7eb;
     border-radius: 0.5rem;
+    height: 25rem;
     transition: all 0.2s ease-in-out;
   }
   
@@ -96,12 +127,14 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 3rem;
-    height: 3rem;
-    background-color: #f3f4f6;
+    width: 10rem;
+    height: 10rem;
     border-radius: 0.5rem;
-    color: #6b7280;
     flex-shrink: 0;
+    transition: transform 0.2s ease-in-out; 
+  }
+  .card:hover .iconContainer {
+    transform: scale(1.1);
   }
   
   .cardContent {
