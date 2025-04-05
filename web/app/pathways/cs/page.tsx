@@ -20,7 +20,7 @@ import Image from "next/image";
   - 45% or below: MATH 104: Algebra for Business & Science
 */
 
-export default function ComputerScience() {
+export default function ComputerSciencePathway() {
   const [mathScore, setMathScore] = useState<number>(0); // Default to 0
   const [csScore, setCsScore] = useState<number>(0); // Default to 0
   const [mathRecommendation, setMathRecommendation] = useState<string | null>(null);

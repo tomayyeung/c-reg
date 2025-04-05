@@ -345,6 +345,28 @@
     outline: none;
 }
 
+.select {
+    width: 100%;
+    padding: 10px 12px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background-color: #fff;
+    color: #333;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 4px rgba(0, 123, 255, 0.25);
+    outline: none;
+}
+
+.select option {
+    font-size: 16px;
+    color: #333;
+}
+
 .button {
     background-color: var(--primary-color);
     color: white;
@@ -390,4 +412,15 @@
     border: 1px solid #ccc;
     border-radius: 8px;
     margin-top: 20px;
+}
+
+.results a {
+    color: var(--primary-color);
+    text-decoration: underline;
+    transition: color 0.2s ease;
+}
+
+.results a:hover {
+    color: var(--primary-color-dark);
+    text-decoration: none;
 }

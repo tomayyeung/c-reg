@@ -23,7 +23,7 @@ export default function Pathways() {
           <ul className={styles.majorList} style={{ gridTemplateColumns: "repeat(1, 1fr)" }}>
 
             <li className={styles.majorItem}>
-              <Link href="https://www.youtube.com/watch?v=3sUDzwGaPrY" className={styles.majorLink}>
+              <Link href="/pathways/chemistry" className={styles.majorLink}>
                 <span className={styles.majorName}>Chemistry</span>
               </Link>
             </li>
