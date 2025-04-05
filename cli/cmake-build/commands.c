@@ -1,5 +1,7 @@
 #include <stdio.h>
 #include <string.h>
+#include <bson.h>
+#include <mongoc.h>
 
 #include "commands.h"
 
@@ -11,6 +13,7 @@ void to_lower(char* s) {
     }
 }
 
+// TO COMPLETE
 char* attr_to_str(enum Attribute a) {
     switch (a) {
         case AI: return "ArrupeImmersion";
@@ -32,6 +35,7 @@ char* attr_to_str(enum Attribute a) {
     }
 }
 
+// TO COMPLETE
 enum Attribute str_to_attr(char* s) {
     to_lower(s);
     if (strcmp(s, "ai") == 0 || strcmp(s, "arrupeimmersion") == 0) return AI;
@@ -75,7 +79,32 @@ enum InstructionMode str_to_instr_mode(char* s) {
     return 0;
 }
 
-int login(char* user) {
+int login(char* user, mongoc_collection_t* collection) {
+    // Create a filter BSON document (empty filter means all documents)
+    bson_t *filter = bson_new();  // Empty filter to fetch all documents
+    const bson_t *reply;
+    bson_error_t error;
+
+    // Perform the find operation
+    mongoc_cursor_t *cursor = mongoc_collection_find_with_opts(collection, filter, NULL, NULL);
+
+    // Iterate over the cursor and print each document
+    while (mongoc_cursor_next(cursor, &reply)) {
+        char *str = bson_as_canonical_extended_json(reply, NULL);
+        printf("%s\n", str);
+        bson_free(str);
+    }
+
+    if (mongoc_cursor_error(cursor, &error)) {
+        fprintf(stderr, "Cursor error: %s\n", error.message);
+    }
+
+    // Cleanup
+    bson_destroy(filter);
+    mongoc_cursor_destroy(cursor);
+    mongoc_collection_destroy(collection);
+    mongoc_cleanup();
+
     printf("login in commands.c\n");
     return 0;
 }

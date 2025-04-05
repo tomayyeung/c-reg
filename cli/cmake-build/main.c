@@ -18,16 +18,18 @@ void print_help() {
     printf("  schedule  Show current weekly schedule\n");
 }
 
-int handle_login(int argc, char** argv) {
+int handle_login(int argc, char** argv, mongoc_client_t* client) {
     if (argc < 3) {
         fprintf(stderr, "No argument found for creg login\n");
         return 1;
     }
+
+    mongoc_collection_t* collection = mongoc_client_get_collection(client, "c-reg_DB", "users");
     
-    return login(argv[2]);
+    return login(argv[2], collection);
 }
 
-int handle_add(int argc, char** argv) {
+int handle_add(int argc, char** argv, mongoc_client_t* client) {
     if (argc < 3) {
         fprintf(stderr, "No argument found for creg add\n");
         return 1;
@@ -47,7 +49,7 @@ int handle_add(int argc, char** argv) {
     return 0;
 }
 
-int handle_browse(int argc, char** argv) {
+int handle_browse(int argc, char** argv, mongoc_client_t* client) {
     // options
     char* subject = "";
     int number = 0;
@@ -177,14 +179,23 @@ int main(int argc, char** argv) {
         return 0;
     }
 
+    mongoc_init();
+    // Create a Mongo client object and connect to MongoDB server
+    mongoc_client_t *client = mongoc_client_new("mongodb+srv://leozhang2024:bzZhMIdXY8hDYXxe@course-reg-cluster.pyj2eqo.mongodb.net/?retryWrites=true&w=majority&appName=course-reg-cluster");
+
+    if (!client) {
+        fprintf(stderr, "Failed to create client\n");
+        return 1;
+    }
+
     // handle commands
     const char* command = argv[1];
     if (strcmp(command, "login") == 0) {
-        handle_login(argc, argv);
+        handle_login(argc, argv, client);
     } else if (strcmp(command, "add") == 0) {
-        handle_add(argc, argv);
+        handle_add(argc, argv, client);
     } else if (strcmp(command, "browse") == 0) {
-        handle_browse(argc, argv);
+        handle_browse(argc, argv, client);
     }
     else {
         fprintf(stderr, "Unknown command: %s\n", command);

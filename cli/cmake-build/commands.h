@@ -2,6 +2,8 @@
  * Commands for creg cli
  */
 
+#include <mongoc.h>
+
 #ifndef COMMANDS
 #define COMMANDS
 
@@ -113,7 +115,7 @@ struct Section {
 /**
  * logs in w/ given username
  */
-int login(char* user);
+int login(char* user, mongoc_collection_t* collection);
 
 /**
  * returns 0 if successful addition, 1 if not
