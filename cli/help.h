@@ -16,6 +16,7 @@ void print_help_view();
 void print_help_viewplans();
 void print_help_browse();
 void print_help_apply();
+void print_help_cbrowse();
 void print_help_schedule();
 
 #endif

@@ -15,7 +15,7 @@ void print_help() {
     printf("  viewplans View a list of all plans\n");
     printf("  browse    Search for classes offered this semester\n");
     printf("  apply     Add all for sections in a plan to main registration\n");
-    // printf("  cbrowse   Browse catalog for all USF courses\n");
+    printf("  cbrowse   Browse catalog for all USF courses\n");
     // printf("  degree    Show degree progress\n");
     printf("  schedule  Show weekly schedule of main or plan\n");
 }
@@ -66,7 +66,7 @@ void print_help_viewplans() {
 
 void print_help_browse() {
     printf("Usage: creg browse [-s | --subject<subject>] [-n | --number<number>] [-I | --instruction<instrmethod>] \n");
-    printf("    [-a | --aatributes<attributes>]  [-i | --instructor<name>] [-k | --keywords<keywords>]\n");
+    printf("    [-a | --attributes<attributes>]  [-i | --instructor<name>] [-k | --keywords<keywords>]\n");
     printf("  Browses all sections with given search queries:\n");
     printf("    [-s | --subject<subject>] searches for the given subject, eg CS.\n");
     printf("    [-n | --number<number>] searches for a specified course number, eg 221 for CS 221.\n");
@@ -79,6 +79,17 @@ void print_help_browse() {
 void print_help_apply() {
     printf("Usage: creg apply [name]\n");
     printf("  Empties main registration and adds all sections in given plan.\n");
+}
+
+void print_help_cbrowse() {
+    printf("Usage: creg cbrowse [-s | --subject<subject>] [-n | --number<number>]\n");
+    printf("    [-a | --attributes<attributes>] [-k | --keywords<keywords>] [-v | --verbose]\n");
+    printf("  Browses all courses (not limited to currently offered sections) with given search queries:\n");
+    printf("    [-s | --subject<subject>] searches for the given subject, eg CS.\n");
+    printf("    [-n | --number<number>] searches for a specified course number, eg 221 for CS 221.\n");
+    printf("    [-a | --attributes<attributes>] to be added\n");
+    printf("    [-k | --keywords<keywords>] to be added\n");
+    printf("    [-v | --verbose] gives more information for each course\n");
 }
 
 void print_help_schedule() {

@@ -344,7 +344,7 @@ int viewplans(mongoc_collection_t* plans_collection) {
     return 0;
 }
 
-int browse(char subject[5], char number[16], enum InstructionMode instruction_mode_search, int n_attrs, enum Attribute attrs[16], char instructor[256], int n_keywords, char** keywords, mongoc_collection_t* sections_collection, mongoc_collection_t* courses_collection) {
+int browse(char subject[5], char number[16], enum InstructionMode instruction_mode_search, int n_attrs, enum Attribute attrs[16], char instructor[256], int n_keywords, char** keywords, int verbose, mongoc_collection_t* sections_collection, mongoc_collection_t* courses_collection) {
     to_upper(subject);
 
     HashTable* courses_map = init_courses(courses_collection);
@@ -427,7 +427,7 @@ int browse(char subject[5], char number[16], enum InstructionMode instruction_mo
         return 1;
     }
 
-    display_sections(i, sections);
+    display_sections(i, sections, verbose);
 
     // Cleanup
     bson_destroy(filter);
@@ -523,7 +523,85 @@ int apply(char* plan, mongoc_collection_t* plans_collection) {
     return 0;
 }
 
-int cbrowse(char subject[5], int number, char name[256], enum Attribute attrs[16], int n_keywords, char** keywords) {
+int cbrowse(char subject[5], char number[16], int n_attrs, enum Attribute attrs[16], int n_keywords, char** keywords, int verbose, mongoc_collection_t* courses_collection) {
+    to_upper(subject);
+
+    struct Course* courses[MAX_BROWSE];
+    int i = 0;
+
+    // Create a filter BSON document (empty filter means all documents)
+    bson_t *filter = bson_new();  // Empty filter to fetch all documents
+    const bson_t *reply;
+    bson_error_t error;
+
+    // Perform the find operation
+    mongoc_cursor_t *cursor = mongoc_collection_find_with_opts(courses_collection, filter, NULL, NULL);
+
+    // Iterate over the cursor
+    while (mongoc_cursor_next(cursor, &reply)) {
+        if (i >= MAX_BROWSE) break;
+
+        bson_iter_t iter;
+
+        // search subject
+        const char* iter_subj;
+        if (bson_iter_init_find(&iter, reply, "subject") && BSON_ITER_HOLDS_UTF8(&iter)) iter_subj = bson_iter_utf8(&iter, NULL);
+        if (*subject != 0) {
+            if (strcmp(subject, iter_subj) != 0) continue;
+        }
+
+        // search number
+        const char* iter_num;
+        if (bson_iter_init_find(&iter, reply, "number") && BSON_ITER_HOLDS_UTF8(&iter)) iter_num = bson_iter_utf8(&iter, NULL);
+        if (*number != 0) {
+            if (strcmp(subject, iter_num) != 0) continue;
+        }
+
+        // search attributes
+
+        // search keywords
+
+        // all tests passed - add this course
+
+        const char* iter_name;
+        if (bson_iter_init_find(&iter, reply, "course_title") && BSON_ITER_HOLDS_UTF8(&iter)) iter_name = bson_iter_utf8(&iter, NULL);
+        const char* iter_units;
+        if (bson_iter_init_find(&iter, reply, "units") && BSON_ITER_HOLDS_UTF8(&iter)) iter_units = bson_iter_utf8(&iter, NULL);
+        const char* iter_descr;
+        if (bson_iter_init_find(&iter, reply, "description") && BSON_ITER_HOLDS_UTF8(&iter)) iter_descr = bson_iter_utf8(&iter, NULL);
+        const char* iter_prereq;
+        if (bson_iter_init_find(&iter, reply, "prerequisites") && BSON_ITER_HOLDS_UTF8(&iter)) iter_prereq = bson_iter_utf8(&iter, NULL);
+        const char* iter_restr;
+        if (bson_iter_init_find(&iter, reply, "restrictions") && BSON_ITER_HOLDS_UTF8(&iter)) iter_restr = bson_iter_utf8(&iter, NULL);
+        const char* iter_college;
+        if (bson_iter_init_find(&iter, reply, "college") && BSON_ITER_HOLDS_UTF8(&iter)) iter_college = bson_iter_utf8(&iter, NULL);
+
+        struct Course* c = (struct Course*) malloc(sizeof(struct Course));
+        c->subject = iter_subj;
+        c->number = iter_num;
+        c->name = iter_name;
+        c->units = iter_units;
+        c->descr = iter_descr;
+        c->prereq = iter_prereq;
+        c->restr = iter_restr;
+        c->college = iter_college;
+
+        courses[i++] = c;
+    }
+
+    if (mongoc_cursor_error(cursor, &error)) {
+        fprintf(stderr, "Cursor error: %s\n", error.message);
+        return 1;
+    }
+
+    display_courses(i, courses, verbose);
+
+    // Cleanup
+    bson_destroy(filter);
+    mongoc_cursor_destroy(cursor);
+    mongoc_collection_destroy(courses_collection);
+    mongoc_cleanup();
+
     return 0;
 }
 
@@ -636,7 +714,7 @@ int schedule(char* plan, mongoc_collection_t* courses_collection, mongoc_collect
         printf("%s:\n", days[i]);
 
         for (int j = 0; j < num_sections_by_day[i]; j++) { // j: index of section
-            display_section(sections_by_day[i][j]);
+            display_section(sections_by_day[i][j], 0);
         }
 
         printf("\n");

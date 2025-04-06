@@ -74,6 +74,11 @@ struct Course {
     const char* subject;
     const char* number;
     const char* name;
+    const char* units;
+    const char* descr;
+    const char* prereq;
+    const char* restr;
+    const char* college;
     // enum Attribute attributes[16];
 };
 
@@ -131,7 +136,7 @@ int viewplans(mongoc_collection_t* collection);
  * displays results of browse - sections
  * returns 1 if error
  */
-int browse(char subject[5], char number[16], enum InstructionMode instruction_mode, int n_attrs, enum Attribute attrs[16], char instructor[256], int n_keywords, char** keywords, mongoc_collection_t* sections_collection, mongoc_collection_t* courses_collection);
+int browse(char subject[5], char number[16], enum InstructionMode instruction_mode, int n_attrs, enum Attribute attrs[16], char instructor[256], int n_keywords, char** keywords, int verbose, mongoc_collection_t* sections_collection, mongoc_collection_t* courses_collection);
 
 /**
  * applies set plan to main
@@ -144,7 +149,7 @@ int apply(char* plan, mongoc_collection_t* plans_collection);
  * prints search results - courses
  * returns 1 if error
  */
-int cbrowse(char subject[5], int number, char name[256], enum Attribute attrs[16], int n_keywords, char** keywords);
+int cbrowse(char subject[5], char number[16], int n_attrs, enum Attribute attrs[16], int n_keywords, char** keywords, int verbose, mongoc_collection_t* courses_collection);
 
 /**
  * displays degree progress

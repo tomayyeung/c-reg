@@ -169,17 +169,41 @@ void days_arr_to_str(char* buf, int* a) {
 
 }
 
-void display_section(struct Section* s) {
+void display_section(struct Section* s, int verbose) {
     struct Course* c = s->course;
     char days[8];
     days_arr_to_str(days, s->days);
-    printf("%d %s%s-%d: %s %s %d-%d %s%s Mode: %s\n", 
+    printf("%d | %s %s-%d: %s | Meeting Times: %s %d-%d | Room: %s%s | Mode: %s\n", 
         s->crn, c->subject, c->number, s->section_num, c->name, days, s->begin_time, s->end_time, s->building, s->room, instr_mode_to_str(s->instruction_mode));
+    if (verbose) {
+        printf("Instructor: %s, %s; %s\n", s->instructor_last, s->instructor_first, s->instructor_email);
+        printf("Dates: %s-%s\n", s->start_date, s->end_date);
+        printf("%d/%d seats remaining\n", s->capacity, s->capacity+s->enrollment);
+    }
 }
 
-void display_sections(int n_sections, struct Section** sections) {
+void display_sections(int n_sections, struct Section** sections, int verbose) {
     for (int i = 0; i < n_sections; i++) {
-        display_section(sections[i]);
+        display_section(sections[i], verbose);
+        if (verbose) printf("-------------------------\n");
+    }
+}
+
+void display_course(struct Course* c, int verbose) {
+    printf("%s %s: %s\n", c->subject, c->number, c->name);
+    if (verbose) {
+        printf("Unit(s): %s\n", c->units);
+        if (*(c->descr) != 0) printf("\n%s\n", c->descr);
+        if (*(c->prereq) != 0) printf("\nPrerequisites: %s", c->prereq);
+        if (*(c->restr) != 0) printf("\nRestrictions: %s\n", c->restr);
+        printf("\n%s\n", c->college);
+    }
+}
+
+void display_courses(int n_courses, struct Course** courses, int verbose) {
+    for (int i = 0; i < n_courses; i++) {
+        display_course(courses[i], verbose);
+        if (verbose) printf("-------------------------\n");
     }
 }
 
