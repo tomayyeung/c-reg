@@ -64,6 +64,7 @@ export default function APCredit() {
   const [testScore, setTestScore] = useState<number>(1);
   const [earnedCredit, setEarnedCredit] = useState<string | null>(null);
 
+
   useEffect(() => {
     if (!testName || testScore < 1 || testScore > 5) {
       setEarnedCredit(null);
@@ -93,9 +94,46 @@ export default function APCredit() {
     }
   }, [testName, testScore]);
 
+
   const handleTestChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setTestName(e.target.value);
   };
+
+
+  const handleAddTestToAccount = async () => {
+    if (!testName || testScore < 1 || testScore > 5) {
+      alert("Please select a valid test and score.");
+      return;
+    }
+
+    const username = localStorage.getItem("currentUser");
+    if (!username) {
+      alert("Please log in first.");
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/ap-credit", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          username,
+          apTestName: testName,
+          apTestScore: testScore
+        }),
+      });
+
+      if (!response.ok) {
+        alert("Failed to add AP Test. Please try again.");
+      }
+    } catch (error) {
+      console.error("Error adding AP Test:", error);
+      alert("An error occurred. Please try again.");
+    }
+  };
+
 
   return (
     <>
@@ -149,11 +187,16 @@ export default function APCredit() {
                 maxLength={1}
               />
             </div>
+
           </div>
 
           <div className={styles.results}>
             {earnedCredit ?? <p>Please select a test and enter a valid score.</p>}
           </div>
+
+          <button onClick={handleAddTestToAccount} className={styles.button}>
+            Add AP Test to Account
+          </button>
         </div>
       </div>
     </>
