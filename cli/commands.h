@@ -2,10 +2,10 @@
  * Commands for creg cli
  */
 
-#include <mongoc.h>
-
 #ifndef COMMANDS
 #define COMMANDS
+
+#include <mongoc.h>
 
 #define MAX_BROWSE (1024)
 
@@ -104,6 +104,8 @@ struct Section {
     char instructor_email[256];
     char college[256];
 };
+
+int art();
 
 /**
  * logs in w/ given username

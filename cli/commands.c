@@ -1,13 +1,26 @@
 #include <stdio.h>
 #include <string.h>
 #include <bson.h>
-#include <mongoc.h>
 
 #include "commands.h"
 #include "commands_helper.h"
-#include "sections.h"
 #include "user.h"
 
+int art() {
+    FILE *file = fopen("ascii.txt", "r");  // Open the file in read mode
+    if (file == NULL) {
+        printf("Error opening file.\n");
+        return 1;
+    }
+
+    char line[256];  // Buffer to store each line
+    while (fgets(line, sizeof(line), file)) {  // Read each line
+        printf("%s", line);  // Print the line
+    }
+
+    fclose(file);  // Close the file
+    return 0;
+}
 
 int login(char* user, mongoc_collection_t* users_collection) {
     // Create a filter BSON document (empty filter means all documents)

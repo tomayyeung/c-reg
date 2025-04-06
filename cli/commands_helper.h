@@ -1,7 +1,7 @@
-#include "sections.h"
-
 #ifndef COMMANDS_HELPER
 #define COMMANDS_HELPER
+
+#include "sections.h"
 
 void to_lower(char* s);
 void to_upper(char* s);

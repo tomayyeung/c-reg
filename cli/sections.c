@@ -1,13 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <mongoc.h>
 
 #include "sections.h"
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 
 #define TABLE_SIZE 10007  // A prime number larger than 5000, helps with uniform distribution
 

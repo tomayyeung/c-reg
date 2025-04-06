@@ -2,12 +2,12 @@
  * courses and sections methods
  */
 
+#ifndef SECTIONS
+#define SECTIONS
+
 #include <mongoc.h>
 
 #include "commands.h"
-
-#ifndef SECTIONS
-#define SECTIONS
 
 typedef struct Node {
     char *key;

@@ -6,7 +6,6 @@
 
 #include "commands.h"
 #include "commands_helper.h"
-#include "sections.h"
 
 // makes a string lowercase in place
 void to_lower(char* s) {
