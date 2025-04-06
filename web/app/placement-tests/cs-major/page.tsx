@@ -5,6 +5,7 @@ import Header from "@/components/Header";
 import ChatBot from "@/components/ChatBot";
 import styles from "../page.module.css";
 import Image from "next/image";
+import { getComputerScienceCourse, getMathCourse } from "@/util/get-courses-by-placement";
 
 /*
   Computer Science Placement Test
@@ -28,25 +29,21 @@ export default function ComputerSciencePathway() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    if (mathScore !== null) {
-      if (mathScore >= 76) setMathRecommendation("MATH 109: Calculus & Analytic Geom I");
-      else if (mathScore >= 68) setMathRecommendation("MATH 108: Precalculus or consider retaking the test to place into MATH 109 (recommended)");
-      else if (mathScore >= 61) setMathRecommendation("MATH 108: Precalculus");
-      else if (mathScore >= 46) setMathRecommendation("MATH 105: Mathematics for Educators");
-      else setMathRecommendation("MATH 104: Algebra for Business & Science");
-    } else {
+    if (mathScore === null) {
       setMathRecommendation(null);
+      return;
     }
+    const recommendation = getMathCourse(mathScore);
+    setMathRecommendation(recommendation);
   }, [mathScore]);
 
   useEffect(() => {
-    if (csScore !== null) {
-      if (csScore >= 75) setCsRecommendation("CS 112: Intro to CS II (Java)");
-      else if (csScore >= 40) setCsRecommendation("CS 111: Intro to CS I (Java)");
-      else setCsRecommendation("CS 110: Intro to CS I (Python)");
-    } else {
+    if (csScore === null) {
       setCsRecommendation(null);
+      return;
     }
+    const recommendation = getComputerScienceCourse(csScore);
+    setCsRecommendation(recommendation);
   }, [csScore]);
 
   const handleMathScoreChange = (e: React.ChangeEvent<HTMLInputElement>) => {
