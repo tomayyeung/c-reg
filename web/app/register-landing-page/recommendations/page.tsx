@@ -1,125 +1,359 @@
-"use client";
+"use client"
 
-import Header from "@/components/Header";
-import ChatBot from "@/components/ChatBot";
-import { getUserCredit, UserCredit } from "@/util/get-user-credit";
-import { getComputerScienceCourse, getMathCourse } from "@/util/get-courses-by-placement";
-import { useState } from "react";
-import { getCsMajorCourses, getUSFCourseEquivalentsFromAP } from "@/util/get-courses-by-ap";
+import { useEffect, useState } from "react"
+import { getUserCredit, type UserCredit, type Test } from "@/util/get-user-credit"
+import { getComputerScienceCourse, getMathCourse } from "@/util/get-courses-by-placement"
+import { getCsMajorCourses, getUSFCourseEquivalentsFromAP } from "@/util/get-courses-by-ap"
+import Header from "@/components/Header"
+import styles from "./page.module.css"
 
 export default function Recommendations() {
-  const [csRecommendation, setCsRecommendation] = useState<string | null>(null);
-  const [mathRecommendation, setMathRecommendation] = useState<string | null>(null);
+  const [userCredit, setUserCredit] = useState<UserCredit | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [csMajorRecommendations, setCsMajorRecommendations] = useState<string[]>([])
+  const [mathRecommendation, setMathRecommendation] = useState<string | null>(null)
+  const [apEquivalents, setApEquivalents] = useState<string[]>([])
+  const [openAccordion, setOpenAccordion] = useState<string | null>(null)
 
-  const handleGetUserCredit = async () => {
-    let userCredit: UserCredit | null = null;
-
-    try {
-      userCredit = await getUserCredit();
-      console.log("userCredit:", userCredit);
-    } catch (error) {
-      console.error("Failed to fetch user credit:", error);
-      return;
-    }
-
-    // Check if userCredit is empty
-    if (!userCredit) {
-      console.log("User credit is empty");
-      return;
-    }
-
-    // Get the "CS Placement Test" score
-    const csPlacementTest = userCredit.placementTests.find(
-      (test) => test.testName === "CS Placement Test"
-    );
-    if (!csPlacementTest) {
-      setCsRecommendation("CS Placement Test not found");
-      return;
-    }
-    const csScore = csPlacementTest.testScore;
-
-    // Get the "Math Placement Test" score
-    const mathPlacementTest = userCredit.placementTests.find(
-      (test) => test.testName === "Math Placement Test"
-    );
-    if (!mathPlacementTest) {
-      setCsRecommendation("Math Placement Test not found");
-      return;
-    }
-    const mathScore = mathPlacementTest.testScore;
-
-    // Get the recommendations from placement tests
-    const csMajorCourseRecommendationByPlacement = getComputerScienceCourse(csScore);
-    const csMathCourseRecommendationByPlacement = getMathCourse(mathScore);
-
-    // Get AP scores
-    const apCredit = userCredit.apCredit;
-    const skippableCourses = getUSFCourseEquivalentsFromAP(apCredit);
-    const csCourseRecommendationsByAP = getCsMajorCourses(skippableCourses);
-    const csMajorCourseRecommendationByAP = csCourseRecommendationsByAP.csMajorCourseRecommendation;
-    const csMathCourseRecommendationByAP = csCourseRecommendationsByAP.csMathCourseRecommendation;
-
-    // Choose the higher recommendation between placement and AP
-    if (csMajorCourseRecommendationByPlacement > csMajorCourseRecommendationByAP)
-      setCsRecommendation(csMajorCourseRecommendationByPlacement);
-    else
-      setCsRecommendation(csMajorCourseRecommendationByAP);
-
-    if (csMathCourseRecommendationByPlacement > csMathCourseRecommendationByAP)
-      setMathRecommendation(csMathCourseRecommendationByPlacement);
-    else
-      setMathRecommendation(csMathCourseRecommendationByAP);
-  };
-
-  /*
-    userCredit example:
+  // Core curriculum data
+  const coreRequirements = [
     {
-      "_id": "67f1f85dc07d31826579b559",
-      "user": "nish",
-      "apCredit": [
-        {
-          "testName": "AP Computer Science A",
-          "testScore": 5
-        },
-        {
-          "testName": "AP Computer Science Principles",
-          "testScore": 5
-        }
+      id: "area-a",
+      area: "Area A – Foundations of Communication (8 units)",
+      requirements: [
+        { name: "Public Speaking (4 units)", courses: ["RHET 103", "RHET 195"] },
+        { name: "Rhetoric and Composition (4 units)", courses: ["RHET 110", "RHET 120", "RHET 130", "RHET 131"] },
       ],
-      "completedCourses": [],
-      "placementTests": [
+    },
+    {
+      id: "area-b",
+      area: "Area B – Mathematics and the Sciences (8 units)",
+      requirements: [
         {
-          "testName": "CS Placement Test",
-          "testScore": 100
+          name: "Math or Quantitative Science (4 units)",
+          courses: ["MATH 104", "MATH 105", "MATH 106", "MATH 107", "MATH 108", "MATH 109"],
         },
-        {
-          "testName": "Math Placement Test",
-          "testScore": 90
-        }
-      ]
+        { name: "Applied or Laboratory Science (4 units)", courses: ["BIOL 100", "CHEM 111", "PHYS 100", "ENVS 110"] },
+      ],
+    },
+    {
+      id: "area-c",
+      area: "Area C – Humanities (8 units)",
+      requirements: [
+        { name: "Literature (4 units)", courses: ["ENGL 192", "ENGL 195", "ENGL 198"] },
+        { name: "History (4 units)", courses: ["HIST 110", "HIST 120", "HIST 130"] },
+      ],
+    },
+    {
+      id: "area-d",
+      area: "Area D – Philosophy, Theology, and Ethics (12 units)",
+      requirements: [
+        { name: "Philosophy (4 units)", courses: ["PHIL 110", "PHIL 195"] },
+        { name: "Theology and Religious Studies (4 units)", courses: ["THRS 100", "THRS 104", "THRS 106"] },
+        { name: "Ethics (4 units)", courses: ["PHIL 240", "THRS 220", "CS 195"] },
+      ],
+    },
+    {
+      id: "area-e",
+      area: "Area E – Social Sciences (4 units)",
+      requirements: [{ name: "Social Sciences", courses: ["PSYC 101", "SOC 150", "POLS 101", "ECON 111", "ECON 112"] }],
+    },
+    {
+      id: "area-f",
+      area: "Area F – Visual and Performing Arts (4 units)",
+      requirements: [{ name: "Visual and Performing Arts", courses: ["ART 101", "MUS 120", "THTR 105", "DANC 140"] }],
+    },
+  ]
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        setLoading(true)
+        const data = await getUserCredit()
+        setUserCredit(data)
+
+        // Process AP credits
+        const equivalents = getUSFCourseEquivalentsFromAP(data.apCredit)
+        setApEquivalents(equivalents)
+
+        // Get CS placement test score
+        const csPlacementTest = data.placementTests.find((test) => test.testName === "CS Placement Test")
+        const csScore = csPlacementTest ? csPlacementTest.testScore : 0
+
+        // Get Math placement test score
+        const mathPlacementTest = data.placementTests.find((test) => test.testName === "Math Placement Test")
+        const mathScore = mathPlacementTest ? mathPlacementTest.testScore : 0
+
+        // Get recommendations
+        const csMajorCourseRecommendationByPlacement = getComputerScienceCourse(csScore)
+        const csMathCourseRecommendationByPlacement = getMathCourse(mathScore)
+
+        // Get recommendations based on AP
+        const { csMajorCourseRecommendation, csMathCourseRecommendation } = getCsMajorCourses(equivalents)
+
+        // Choose the higher recommendation
+        const finalCsRecommendation =
+          csMajorCourseRecommendationByPlacement > csMajorCourseRecommendation
+            ? csMajorCourseRecommendationByPlacement
+            : csMajorCourseRecommendation
+
+        const finalMathRecommendation =
+          csMathCourseRecommendationByPlacement > csMathCourseRecommendation
+            ? csMathCourseRecommendationByPlacement
+            : csMathCourseRecommendation
+
+        // Set recommendations
+        setCsMajorRecommendations([finalCsRecommendation])
+        setMathRecommendation(finalMathRecommendation)
+      } catch (err) {
+        console.error("Error fetching data:", err)
+        setError("Failed to load your course data. Please try again later.")
+      } finally {
+        setLoading(false)
+      }
     }
-  */
+
+    fetchUserData()
+  }, [])
+
+  // Toggle accordion
+  const toggleAccordion = (id: string) => {
+    if (openAccordion === id) {
+      setOpenAccordion(null)
+    } else {
+      setOpenAccordion(id)
+    }
+  }
+
+  // Helper function to render test scores
+  const renderTestScores = (tests: Test[], title: string) => {
+    if (!tests || tests.length === 0) return <p>No {title} on record</p>
+
+    return (
+      <div>
+        {tests.map((test, index) => (
+          <div key={index} className={styles.testItem}>
+            <span className={styles.testName}>{test.testName}</span>
+            <span className={styles.scoreBadge}>{test.testScore}</span>
+          </div>
+        ))}
+      </div>
+    )
+  }
+
+  if (loading) {
+    return (
+      <>
+        <Header />
+        <div className={styles.container} style={{ marginTop: "6rem" }}>
+          <div className={styles.spinnerContainer}>
+            <div className={styles.spinner}></div>
+            <span>Loading your course recommendations...</span>
+          </div>
+        </div>
+      </>
+    )
+  }
+
+  if (error) {
+    return (
+      <>
+        <Header />
+        <div className={styles.container} style={{ marginTop: "6rem" }}>
+          <div className={styles.errorContainer}>
+            <p>{error}</p>
+            <button className={styles.retryButton} onClick={() => window.location.reload()}>
+              Try Again
+            </button>
+          </div>
+        </div>
+      </>
+    )
+  }
 
   return (
     <>
       <Header />
-      <ChatBot />
+      <main className={`${styles.container} ${styles.fadeIn}`} style={{ marginTop: "6rem" }}>
+        <h1 className={styles.pageTitle}>Your Course Recommendations</h1>
+        <p className={styles.pageDescription}>
+          Based on your academic history, here are the courses we recommend for your first semester.
+        </p>
 
-      <button
-        onClick={handleGetUserCredit}
-        style={{ marginTop: "100px", padding: "10px 20px", cursor: "pointer" }}
-      >
-        Get User Credit
-      </button>
+        <div className={styles.grid}>
+          {/* Box 1: AP & Placement Tests */}
+          <div className={styles.card}>
+            <div className={`${styles.cardHeader} ${styles.cardHeaderTests}`}>
+              <h2 className={styles.cardTitle}>
+                <span className={styles.icon}>📋</span>
+                Tests on Record
+              </h2>
+              <div className={styles.cardDescription}>Your AP & Placement Test scores</div>
+            </div>
+            <div className={styles.cardContent}>
+              <div className={styles.section}>
+                <h3 className={styles.sectionTitle}>AP Tests</h3>
+                {renderTestScores(userCredit?.apCredit || [], "AP Tests")}
+              </div>
 
-      <br></br>
-      <br></br>
-      <br></br>
-      <br></br>
+              <div className={styles.section}>
+                <h3 className={styles.sectionTitle}>Placement Tests</h3>
+                {renderTestScores(userCredit?.placementTests || [], "Placement Tests")}
+              </div>
 
-      {csRecommendation ?? "No recommendation available."}
-      <br></br>
-      {mathRecommendation ?? "No recommendation available."}
+              {apEquivalents.length > 0 && (
+                <div className={styles.section}>
+                  <h3 className={styles.sectionTitle}>Course Equivalents</h3>
+                  <ul className={styles.bulletList}>
+                    {apEquivalents.map((course, index) => (
+                      <li key={index}>{course}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+            <div className={styles.cardFooter}>
+              <a href="/ap-credit" className={styles.link}>
+                AP Credit Details
+                <span className={styles.iconSmall}>→</span>
+              </a>
+              <a href="/placement-tests" className={styles.link}>
+                Placement Tests
+                <span className={styles.iconSmall}>→</span>
+              </a>
+            </div>
+          </div>
+
+          {/* Box 2: Core Requirements */}
+          <div className={styles.card}>
+            <div className={`${styles.cardHeader} ${styles.cardHeaderCore}`}>
+              <h2 className={styles.cardTitle}>
+                <span className={styles.icon}>📚</span>
+                Core Curriculum
+              </h2>
+              <div className={styles.cardDescription}>USF Core requirements (44 units total)</div>
+            </div>
+            <div
+              className={`${styles.cardContent} ${styles.scrollArea}`}
+              style={{ paddingTop: "1.5rem", paddingBottom: "0.5rem" }}
+            >
+              <div className={styles.accordionContainer}>
+                {coreRequirements.map((area) => (
+                  <div
+                    key={area.id}
+                    className={`${styles.accordionItem} ${openAccordion === area.id ? styles.accordionOpen : ""}`}
+                  >
+                    <div className={styles.accordionHeader} onClick={() => toggleAccordion(area.id)}>
+                      {area.area}
+                      <span className={styles.accordionIcon}>▼</span>
+                    </div>
+                    <div className={styles.accordionContent}>
+                      {area.requirements.map((req, reqIndex) => (
+                        <div key={reqIndex} style={{ marginBottom: "1rem", paddingTop: "0.5rem" }}>
+                          <h4 className={styles.requirementTitle}>{req.name}</h4>
+                          <div className={styles.courseListInAccordion}>
+                            {req.courses.map((course, courseIndex) => (
+                              <div key={courseIndex} className={styles.courseListItem}>
+                                <a href={`/catalog/${course.replace(" ", "-").toLowerCase()}`} className={styles.link}>
+                                  {course}
+                                  <span className={styles.iconSmall}>↗</span>
+                                </a>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className={styles.cardFooter}>
+              <a href="/core-curriculum" className={styles.link}>
+                View complete Core Curriculum guide
+                <span className={styles.iconSmall}>→</span>
+              </a>
+            </div>
+          </div>
+
+          {/* Box 3: Major-specific Recommendations */}
+          <div className={styles.card}>
+            <div className={`${styles.cardHeader} ${styles.cardHeaderRecommended}`}>
+              <h2 className={styles.cardTitle}>
+                <span className={styles.icon}>🎓</span>
+                Recommended Courses
+              </h2>
+              <div className={styles.cardDescription}>Your personalized course plan</div>
+            </div>
+            <div className={styles.cardContent}>
+              <div className={styles.section}>
+                <h3 className={styles.sectionTitle}>Major Courses</h3>
+                {csMajorRecommendations.length > 0 ? (
+                  <ul className={styles.courseList}>
+                    {csMajorRecommendations.map((course, index) => (
+                      <li
+                        key={index}
+                        className={`${styles.courseItem} ${styles.recommendedCourse} ${styles.newRecommendation}`}
+                      >
+                        <div className={styles.courseTitle}>{course}</div>
+                        <div className={styles.courseSubtitle}>Computer Science</div>
+                        <a
+                          href={`/catalog/${course.split(":")[0].trim().toLowerCase().replace(" ", "-")}`}
+                          className={styles.link}
+                        >
+                          View in catalog
+                          <span className={styles.iconSmall}>↗</span>
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p style={{ color: "#6b7280" }}>No major courses recommended</p>
+                )}
+              </div>
+
+              <div className={styles.section}>
+                <h3 className={styles.sectionTitle}>Math Requirement</h3>
+                {mathRecommendation ? (
+                  <div className={`${styles.courseItem} ${styles.recommendedCourse}`}>
+                    <div className={styles.courseTitle}>{mathRecommendation}</div>
+                    <div className={styles.courseSubtitle}>Mathematics</div>
+                    <a
+                      href={`/catalog/${mathRecommendation.split(":")[0].trim().toLowerCase().replace(" ", "-")}`}
+                      className={styles.link}
+                    >
+                      View in catalog
+                      <span className={styles.iconSmall}>↗</span>
+                    </a>
+                  </div>
+                ) : (
+                  <p style={{ color: "#6b7280" }}>No math course recommended</p>
+                )}
+              </div>
+
+              <div className={styles.section}>
+                <h3 className={styles.sectionTitle}>Core Recommendations</h3>
+                <div className={`${styles.courseItem} ${styles.recommendedCourse}`}>
+                  <div className={styles.courseTitle}>RHET 110</div>
+                  <div className={styles.courseSubtitle}>Written Communication I</div>
+                  <a href="/catalog/rhet-110" className={styles.link}>
+                    View in catalog
+                    <span className={styles.iconSmall}>↗</span>
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div className={styles.cardFooter}>
+              <a href="/degree-evaluation" className={styles.link}>
+                View full degree evaluation
+                <span className={styles.iconSmall}>→</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      </main>
     </>
-  );
+  )
 }
+
