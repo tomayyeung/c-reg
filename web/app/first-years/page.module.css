@@ -111,7 +111,8 @@
     color: var(--primary-color);
     font-weight: 600;
     text-decoration: none;
-    display: inline-flex;
+    display: flex;
+    padding: 3px;
     align-items: center;
 }
 

@@ -37,6 +37,7 @@ export default function FirstYears() {
                 <h3>Important Dates</h3>
                 <p>Mark your calendar with registration periods, add/drop deadlines, and academic calendar milestones.</p>
                 <Link href="https://www.usfca.edu/academic-calendar" className={styles.cardLink} target="_blank" rel="noopener noreferrer">View Calendar</Link>
+                <Link href="https://calendar.google.com/calendar/embed?src=c_c5edbe80c4f6a6772124a4608179aadc4f6518061082ad43ec02538c13c8e54a%40group.calendar.google.com&ctz=America%2FLos_Angeles" className={styles.cardLink} target="_blank" rel="noopener noreferrer">Add Google Calendar</Link>
               </div>
             </div>
           </div>
