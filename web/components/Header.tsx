@@ -3,11 +3,12 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import Image from "next/image"; // Import Image component
 import styles from "../app/page.module.css";
 
 export default function Header() {
   const [username, setUsername] = useState<string | null>(null);
-  const router = useRouter(); // Initialize router
+  const router = useRouter();
 
   useEffect(() => {
     const currentUser = localStorage.getItem("currentUser");
@@ -17,13 +18,22 @@ export default function Header() {
   }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem("currentUser"); // Remove user from localStorage
-    setUsername(null); // Clear username state
-    router.push("/"); // Redirect to the homepage
+    localStorage.removeItem("currentUser");
+    setUsername(null);
+    router.push("/");
   };
 
   return (
     <header className={styles.header}>
+      <Link href="/">
+        <Image
+          src="/craigFull.png"
+          alt="Logo"
+          width={41}
+          height={61}
+          style={{ marginRight: "10px" }}
+        />
+      </Link>
       <Link href="/" className={styles.logo}>
         creg
       </Link>
