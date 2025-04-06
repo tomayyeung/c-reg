@@ -2,9 +2,11 @@
 
 import { useRef, useEffect, useState } from "react";
 import { useChat } from "../context/ChatContext";
+import { usePathname } from "next/navigation";
 
 export default function ChatBot() {
-  const { messages, addMessage, isOpen, toggleChat } = useChat();
+  const [isOpen, setIsOpen] = useState(usePathname() === "/"); // Open by default on the home page
+  const { messages, addMessage } = useChat();
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -15,6 +17,10 @@ export default function ChatBot() {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [messages]);
+
+  const toggleChat = () => {
+    setIsOpen(!isOpen);
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setInput(e.target.value);

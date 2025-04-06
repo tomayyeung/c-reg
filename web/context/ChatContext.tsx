@@ -12,15 +12,12 @@ interface ChatContextType {
   messages: Message[];
   addMessage: (message: Message) => void;
   clearMessages: () => void;
-  isOpen: boolean;
-  toggleChat: () => void;
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
 
 export const ChatProvider = ({ children }: { children: ReactNode }) => {
   const [messages, setMessages] = useState<Message[]>([]);
-  const [isOpen, setIsOpen] = useState(true); // Default to open
 
   const addMessage = (message: Message) => {
     setMessages((prev) => [...prev, message]);
@@ -30,12 +27,8 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
     setMessages([]);
   };
 
-  const toggleChat = () => {
-    setIsOpen((prev) => !prev);
-  };
-
   return (
-    <ChatContext.Provider value={{ messages, addMessage, clearMessages, isOpen, toggleChat }}>
+    <ChatContext.Provider value={{ messages, addMessage, clearMessages }}>
       {children}
     </ChatContext.Provider>
   );
