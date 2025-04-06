@@ -1,10 +1,25 @@
 /* Main container */
 .container {
-    max-width: 1200px;
     margin: 0 auto;
     padding: 2rem 1rem;
+    height: 100%;
+    background-image: url("/USFBackground.jpg");
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
   }
-  
+  .container::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.5); 
+    z-index: 0;
+  }
+  .container > * {
+    position: relative;
+    z-index: 1;
+  }
   /* Alert messages */
   .error-alert {
     background-color: #fee2e2;
@@ -18,9 +33,9 @@
   /* Layout */
   .catalog-layout {
     margin-top: 4rem;
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 1.5rem;
+    display: block; 
+    max-width: 100%; 
+    margin-left: 320px;
   }
   
   @media (min-width: 1024px) {
@@ -32,7 +47,7 @@
   /* Card styles */
   .card {
     background-color: white;
-    border-radius: 0.5rem;
+    border-radius: 2rem;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     overflow: hidden;
   }
@@ -53,6 +68,14 @@
   }
   
   /* Filter controls */
+  .filter-container {
+    position: fixed;
+    top: 50%;
+    left: 2rem;
+    transform: translateY(-50%);
+    width: 300px;
+  }
+
   .filter-group {
     margin-bottom: 1.5rem;
   }
@@ -110,6 +133,7 @@
   
   /* Course cards */
   .courses-list {
+    color: white;
     display: flex;
     flex-direction: column;
     gap: 1rem;
@@ -117,13 +141,14 @@
   
   .course-card {
     border: 1px solid #e5e7eb;
+    background-color: white;
     border-radius: 0.375rem;
     overflow: hidden;
   }
   
   .course-header {
     padding: 1rem;
-    background-color: #f9fafb;
+    background-color: #00543C;
     border-bottom: 1px solid #e5e7eb;
   }
   
@@ -131,6 +156,7 @@
     font-weight: 600;
     font-size: 1.125rem;
     margin-bottom: 0.25rem;
+    color: white;
   }
   
   .course-code {
@@ -140,7 +166,7 @@
   
   .course-college {
     font-size: 0.75rem;
-    color: #6b7280;
+    color: #FDBB30;
     margin-top: 0.25rem;
   }
   
@@ -160,10 +186,11 @@
     font-weight: 500;
     font-size: 0.875rem;
     margin-bottom: 0.25rem;
-    color: #4b5563;
+    color: #000000;
   }
   
   .section-content {
+    color: black;
     font-size: 0.875rem;
     line-height: 1.5;
   }
