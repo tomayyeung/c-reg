@@ -109,6 +109,7 @@ export default function ChatBot() {
       fontWeight: "bold",
       borderTopLeftRadius: "10px",
       borderTopRightRadius: "10px",
+      cursor: "pointer",
     },
     messagesContainer: {
       flex: 1,
@@ -161,7 +162,9 @@ export default function ChatBot() {
     <div style={chatBotStyles.container}>
       {isOpen && (
         <div style={chatBotStyles.chatWindow}>
-          <div style={chatBotStyles.header}>Craig</div>
+          <div style={chatBotStyles.header} onClick={toggleChat}>
+            Craig
+          </div>
           <div style={chatBotStyles.messagesContainer}>
             {messages.length === 0 && (
               <div style={{ textAlign: "center", color: "#666", margin: "20px 0" }}>
