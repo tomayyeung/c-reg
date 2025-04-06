@@ -1,10 +1,12 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation" // For navigation
 import { getUserCredit, type UserCredit, type Test } from "@/util/get-user-credit"
 import { getComputerScienceCourse, getMathCourse } from "@/util/get-courses-by-placement"
 import { getCsMajorCourses, getUSFCourseEquivalentsFromAP } from "@/util/get-courses-by-ap"
 import Header from "@/components/Header"
+import ChatBot from "@/components/ChatBot"
 import styles from "./page.module.css"
 
 export default function Recommendations() {
@@ -15,6 +17,18 @@ export default function Recommendations() {
   const [mathRecommendation, setMathRecommendation] = useState<string | null>(null)
   const [apEquivalents, setApEquivalents] = useState<string[]>([])
   const [openAccordion, setOpenAccordion] = useState<string | null>(null)
+
+  const router = useRouter() // For programmatic navigation
+
+  // Redirect to login if no user is logged in
+  useEffect(() => {
+    console.log("Checking for logged-in user...");
+
+    const currentUser = localStorage.getItem("currentUser")
+    if (!currentUser) {
+      router.push("/login") // Redirect to the login page
+    }
+  }, [router])
 
   // Core curriculum data
   const coreRequirements = [
@@ -107,7 +121,7 @@ export default function Recommendations() {
         setCsMajorRecommendations([finalCsRecommendation])
         setMathRecommendation(finalMathRecommendation)
       } catch (err) {
-        console.error("Error fetching data:", err)
+        console.log("Error fetching data:", err)
         setError("Failed to load your course data. Please try again later.")
       } finally {
         setLoading(false)
@@ -175,6 +189,8 @@ export default function Recommendations() {
   return (
     <>
       <Header />
+      <ChatBot />
+
       <main className={`${styles.container} ${styles.fadeIn}`} style={{ marginTop: "6rem" }}>
         <h1 className={styles.pageTitle}>Your Course Recommendations</h1>
         <p className={styles.pageDescription}>
@@ -186,7 +202,6 @@ export default function Recommendations() {
           <div className={styles.card}>
             <div className={`${styles.cardHeader} ${styles.cardHeaderTests}`}>
               <h2 className={styles.cardTitle}>
-                <span className={styles.icon}>📋</span>
                 Tests on Record
               </h2>
               <div className={styles.cardDescription}>Your AP & Placement Test scores</div>
@@ -215,7 +230,7 @@ export default function Recommendations() {
             </div>
             <div className={styles.cardFooter}>
               <a href="/ap-credit" className={styles.link}>
-                AP Credit Details
+                AP Tests
                 <span className={styles.iconSmall}>→</span>
               </a>
               <a href="/placement-tests" className={styles.link}>
@@ -229,7 +244,6 @@ export default function Recommendations() {
           <div className={styles.card}>
             <div className={`${styles.cardHeader} ${styles.cardHeaderCore}`}>
               <h2 className={styles.cardTitle}>
-                <span className={styles.icon}>📚</span>
                 Core Curriculum
               </h2>
               <div className={styles.cardDescription}>USF Core requirements (44 units total)</div>
@@ -269,19 +283,12 @@ export default function Recommendations() {
                 ))}
               </div>
             </div>
-            <div className={styles.cardFooter}>
-              <a href="/core-curriculum" className={styles.link}>
-                View complete Core Curriculum guide
-                <span className={styles.iconSmall}>→</span>
-              </a>
-            </div>
           </div>
 
           {/* Box 3: Major-specific Recommendations */}
           <div className={styles.card}>
             <div className={`${styles.cardHeader} ${styles.cardHeaderRecommended}`}>
               <h2 className={styles.cardTitle}>
-                <span className={styles.icon}>🎓</span>
                 Recommended Courses
               </h2>
               <div className={styles.cardDescription}>Your personalized course plan</div>
@@ -294,7 +301,7 @@ export default function Recommendations() {
                     {csMajorRecommendations.map((course, index) => (
                       <li
                         key={index}
-                        className={`${styles.courseItem} ${styles.recommendedCourse} ${styles.newRecommendation}`}
+                        className={`${styles.courseItem} ${styles.recommendedCourse}`}
                       >
                         <div className={styles.courseTitle}>{course}</div>
                         <div className={styles.courseSubtitle}>Computer Science</div>

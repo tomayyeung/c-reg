@@ -36,7 +36,7 @@ export async function getUserCredit(): Promise<UserCredit> {
 
         return data;
     } catch (error) {
-        console.error("Error fetching user credit:", error);
+        console.log("Error fetching user credit:", error);
         throw new Error("Failed to fetch user credit");
     }
 }
