@@ -29,11 +29,22 @@ export async function POST(request: Request) {
         const user = await creditCollection.findOne({ user: username });
 
         if (user) {
-            // If user exists, update the placementTests array (add the placement test object without duplicates)
-            await creditCollection.updateOne(
-                { user: username },
-                { $addToSet: { placementTests: { testName: placementTestName, testScore: placementTestScore } } },    // Add unique placement test object
-            );
+            // Check if the user already has the placement test in their document
+            const existingPlacementTest = user.placementTests.find((test: { testName: string; testScore: number }) => test.testName === placementTestName);
+
+            // If the placement test already exists, update the score
+            // If the placement test doesn't exist, add it to the array
+            if (existingPlacementTest) {
+                await creditCollection.updateOne(
+                    { user: username, "placementTests.testName": placementTestName },
+                    { $set: { "placementTests.$.testScore": placementTestScore } } // Update the score of the existing placement test
+                );
+            } else {
+                await creditCollection.updateOne(
+                    { user: username },
+                    { $addToSet: { placementTests: { testName: placementTestName, testScore: placementTestScore } } }
+                );
+            }
         } else {
             // If user doesn't exist, create a new document
             await creditCollection.insertOne({

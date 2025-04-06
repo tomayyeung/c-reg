@@ -29,16 +29,27 @@ export async function POST(request: Request) {
         const user = await creditCollection.findOne({ user: username });
 
         if (user) {
-            // If user exists, update the apCredit array (add the AP test object without duplicates)
-            await creditCollection.updateOne(
-                { user: username },
-                { $addToSet: { apCredit: { testName: apTestName, testScore: apTestScore } } },    // Add unique AP test object
-            );
+            // Check if the user already has the ap test in their document
+            const existingApTest = user.apCredit.find((test: { testName: string; testScore: number }) => test.testName === apTestName);
+
+            // If the placement test already exists, update the score
+            // If the placement test doesn't exist, add it to the array
+            if (existingApTest) {
+                await creditCollection.updateOne(
+                    { user: username, "apCredit.testName": apTestName },
+                    { $set: { "apCredit.$.testScore": apTestScore } } // Update the score of the existing ap test
+                );
+            } else {
+                await creditCollection.updateOne(
+                    { user: username },
+                    { $addToSet: { apCredit: { testName: apTestName, testScore: apTestScore } } }
+                );
+            }
         } else {
             // If user doesn't exist, create a new document
             await creditCollection.insertOne({
                 user: username,
-                apCredit: [{ testName: apTestName, testScore: apTestScore }], // Add the AP test object
+                apCredit: [{ testName: apTestName, testScore: apTestScore }], // Add the ap test object
                 completedCourses: [],
                 placementTests: [],
             });
