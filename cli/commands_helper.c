@@ -170,3 +170,73 @@ void display_sections(int n_sections, struct Section** sections) {
             s->crn, c->subject, c->number, s->section_num, c->name, days, s->begin_time, s->end_time, s->building, s->room, instr_mode_to_str(s->instruction_mode));
     }
 }
+
+int add_to_section(int crn, mongoc_collection_t* sections_collection, int addition) {
+    // addition = 1 for adding, -1 for removing
+    bson_t *query = bson_new();
+    bson_t *update = bson_new();
+    bson_t set_doc;
+    bson_error_t error;
+
+    // Query: { "crn": crn, "capacity": { "$gte": 1} }
+    BSON_APPEND_INT32(query, "crn", crn);
+    BSON_APPEND_DOCUMENT_BEGIN(query, "capacity", &set_doc);
+    BSON_APPEND_INT32(&set_doc, "$gte", 1);  // Greater than or equal to 1
+    bson_append_document_end(query, &set_doc);
+
+    // Update: { $inc: { "capacity": -addition }, $inc: { "enrollment": addition } }
+    BSON_APPEND_DOCUMENT_BEGIN(update, "$inc", &set_doc);
+    BSON_APPEND_INT32(&set_doc, "capacity", -addition);  // Decrement by 1
+    bson_append_document_end(update, &set_doc);
+
+    BSON_APPEND_DOCUMENT_BEGIN(update, "$inc", &set_doc);
+    BSON_APPEND_INT32(&set_doc, "enrollment", addition);  // increment by 1
+    bson_append_document_end(update, &set_doc);
+
+    // Perform the update
+    bool success = mongoc_collection_update_one(sections_collection, query, update, NULL, NULL, &error);
+    
+    if (!success) {
+        fprintf(stderr, "Failed to decrement semester: %s\n", error.message);
+    } else {
+        printf("crn %d \n", crn);
+    }
+
+    bson_destroy(query);
+    bson_destroy(update);
+    return success ? 0 : 1;
+}
+
+int crn_exists(int crn, char* username, char* plan, mongoc_collection_t* plans_collection) {
+    bson_t *query = bson_new();
+    bson_t *filter = bson_new();
+
+    // // Query to check if the specific plan contains the crn
+    // BSON_APPEND_UTF8(query, "name", username);
+    // char plan_field[256];
+    // snprintf(plan_field, sizeof(plan_field), "plans.%s.crn", plan);  // Example: "plans.main.crn"
+    // BSON_APPEND_INT32(query, plan_field, crn);  // Match crn in the specified plan
+
+    // // Perform the query
+    // mongoc_cursor_t *cursor = mongoc_collection_find_with_opts(plans_collection, query, NULL, NULL);
+    // const bson_t *doc;
+
+
+    // Query to check if the crn exists in the plans array
+    BSON_APPEND_UTF8(query, "name", username);
+    char plan_field[256];
+    snprintf(plan_field, sizeof(plan_field), "plans.%s", plan); // eg "plans.A"
+    BSON_APPEND_INT32(query, plan_field, crn); // Match crn in the plans array
+
+    // Perform the query
+    mongoc_cursor_t *cursor = mongoc_collection_find_with_opts(plans_collection, query, NULL, NULL);
+    const bson_t *doc;
+    
+    int found = 0;
+    while (mongoc_cursor_next(cursor, &doc)) {
+        // If we find a document, it means the crn is in the plan
+        found = 1;
+        break;  // We found the crn in the plan, no need to continue
+    }
+    return found;
+}

@@ -67,7 +67,7 @@ int logout() {
     return remove(get_user_file_path());
 }
 
-int add(int crn, char* plan, mongoc_collection_t* collection) {
+int add(int crn, char* plan, mongoc_collection_t* plans_collection, mongoc_collection_t* sections_collection) {
     char* username = load_username();
     if (username == NULL) {
         fprintf(stderr, "Not logged in\n");
@@ -78,8 +78,25 @@ int add(int crn, char* plan, mongoc_collection_t* collection) {
     bson_error_t error;
 
     char working_plan[256];
-    if (*plan == 0) strcpy(working_plan, "main");
+    if (*plan == 0) {
+        strcpy(working_plan, "main");
+    }
     else strcpy(working_plan, plan);
+
+    // check if plan already contains crn
+    if (crn_exists(crn, username, working_plan, plans_collection)) {
+        fprintf(stderr, "CRN %d aready exists in plan %s\n", crn, working_plan);
+        return 1;
+    }
+
+    // update db if working on main
+    if (*plan == 0) {
+        // find section, update enrollment
+        printf("working main\n");
+        if (add_to_section(crn, sections_collection, 1)) {
+            return 1;
+        }
+    }
 
     // Build the field path: plans.<plan_name>
     char field_path[128];
@@ -95,24 +112,45 @@ int add(int crn, char* plan, mongoc_collection_t* collection) {
     bson_append_document_end(update, &child);
 
     // Execute update
-    if (!mongoc_collection_update_one(collection, query, update, NULL, NULL, &error)) {
+    if (!mongoc_collection_update_one(plans_collection, query, update, NULL, NULL, &error)) {
         fprintf(stderr, "Addition to plan failed: %s\n", error.message);
         bson_destroy(query);
         bson_destroy(update);
         return 1;
     }
 
-    printf("added crn: %d to plan: %s\n", crn, plan);
+    printf("Added crn: %d to plan: %s\n", crn, working_plan);
     bson_destroy(query);
     bson_destroy(update);
     return 0;
 }
 
-int rm(int crn, char* plan, mongoc_collection_t* collection) {
+int rm(int crn, char* plan, mongoc_collection_t* plans_collection, mongoc_collection_t* sections_collection) {
     char* username = load_username();
     if (username == NULL) {
         fprintf(stderr, "Not logged in\n");
         return 1;
+    }
+
+    char working_plan[256];
+    if (*plan == 0) {
+        strcpy(working_plan, "main");
+    }
+    else strcpy(working_plan, plan);
+
+    // check if plan doesn't contains crn
+    if (!crn_exists(crn, username, working_plan, plans_collection)) {
+        fprintf(stderr, "CRN %d does not exist in plan %s\n", crn, working_plan);
+        return 1;
+    }
+
+    // update db if working on main
+    if (*plan == 0) {
+        // find section, update enrollment
+        printf("working main\n");
+        if (add_to_section(crn, sections_collection, -1)) {
+            return 1;
+        }
     }
     
     bson_t *query = bson_new();
@@ -125,16 +163,16 @@ int rm(int crn, char* plan, mongoc_collection_t* collection) {
 
     // Build update: { $pull: { "plans.main": 67890 } }
     char field_path[128];
-    snprintf(field_path, sizeof(field_path), "plans.%s", plan);
+    snprintf(field_path, sizeof(field_path), "plans.%s", working_plan);
 
     BSON_APPEND_DOCUMENT_BEGIN(update, "$pull", &child);
     BSON_APPEND_INT32(&child, field_path, crn);
     bson_append_document_end(update, &child);
 
     // Perform the update
-    bool success = mongoc_collection_update_one(
-        collection, query, update, NULL, NULL, &error);
+    bool success = mongoc_collection_update_one(plans_collection, query, update, NULL, NULL, &error);
 
+    printf("Removed crn: %d from plan: %s\n", crn, working_plan);
     bson_destroy(query);
     bson_destroy(update);
     return success ? 0 : 1;

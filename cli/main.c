@@ -48,7 +48,7 @@ int handle_add(int argc, char** argv, mongoc_client_t* client) {
     }
 
     char plan[256];
-    strcpy(plan, "main");
+    *plan = 0;
 
     static struct option long_options[] = {
         {"plan", required_argument, 0, 'p'},
@@ -65,9 +65,10 @@ int handle_add(int argc, char** argv, mongoc_client_t* client) {
         }
     }
 
-    mongoc_collection_t* collection = mongoc_client_get_collection(client, "c-reg_DB", "plans");
+    mongoc_collection_t* plans_collection = mongoc_client_get_collection(client, "c-reg_DB", "plans");
+    mongoc_collection_t* sections_collection = mongoc_client_get_collection(client, "c-reg_DB", "sections");
 
-    return add(crn, plan, collection);
+    return add(crn, plan, plans_collection, sections_collection);
 }
 
 int handle_rm(int argc, char** argv, mongoc_client_t* client) {
@@ -83,7 +84,7 @@ int handle_rm(int argc, char** argv, mongoc_client_t* client) {
     }
 
     char plan[256];
-    strcpy(plan, "main");
+    *plan = 0;
 
     static struct option long_options[] = {
         {"plan", required_argument, 0, 'p'},
@@ -100,9 +101,10 @@ int handle_rm(int argc, char** argv, mongoc_client_t* client) {
         }
     }
 
-    mongoc_collection_t* collection = mongoc_client_get_collection(client, "c-reg_DB", "plans");
+    mongoc_collection_t* plans_collection = mongoc_client_get_collection(client, "c-reg_DB", "plans");
+    mongoc_collection_t* sections_collection = mongoc_client_get_collection(client, "c-reg_DB", "sections");
 
-    return rm(crn, plan, collection);    
+    return rm(crn, plan, plans_collection, sections_collection);    
 }
 
 int handle_rmplan(int argc, char** argv, mongoc_client_t* client) {

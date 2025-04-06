@@ -10,5 +10,7 @@ enum InstructionMode str_to_instr_mode(char* s);
 int* days_str_to_arr(const char* s);
 void days_arr_to_str(char* buf, int* a);
 void display_sections(int n_sections, struct Section** sections);
+int add_to_section(int crn, mongoc_collection_t* sections_collection, int addition);
+int crn_exists(int crn, char* username, char* plan, mongoc_collection_t* plans_collection);
 
 #endif
