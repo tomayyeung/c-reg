@@ -67,7 +67,7 @@ export default function CourseCatalog() {
       setCourses(data.courses)
 
       // Set colleges for dropdown if available
-      if (data.courses.colleges && Array.isArray(data.colleges)) {
+      if (data.colleges && Array.isArray(data.colleges)) {
         setColleges(data.colleges)
       }
 

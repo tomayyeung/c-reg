@@ -30,7 +30,7 @@ export async function GET(request: Request) {
     const collegesResult = await coursesCollection.distinct("college")
     // Filter out any empty or null values
     const colleges = collegesResult.filter((college) => college && typeof college === "string")
-
+    console.log(colleges)
     // Build search query
     const query: any = {}
 
