@@ -5,13 +5,6 @@
     padding: 2rem 1rem;
   }
   
-  /* Page title */
-  .page-title {
-    font-size: 1.875rem;
-    font-weight: 700;
-    margin-bottom: 1.5rem;
-  }
-  
   /* Alert messages */
   .error-alert {
     background-color: #fee2e2;
@@ -24,6 +17,7 @@
   
   /* Layout */
   .catalog-layout {
+    margin-top: 4rem;
     display: grid;
     grid-template-columns: 1fr;
     gap: 1.5rem;

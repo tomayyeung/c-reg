@@ -108,7 +108,6 @@ export default function CourseCatalog() {
       <Header />
 
       <div className={styles.container}>
-        <h1 className={styles["page-title"]}>Course Catalog</h1>
 
         {error && (
           <div className={styles["error-alert"]}>

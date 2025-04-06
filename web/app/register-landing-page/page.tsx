@@ -67,16 +67,13 @@ export default function RegisterPage() {
 
         <div className={styles.mainContent}>
           <div className={styles.grid}>
-            {/* Prepare for Registration */}
+            {/* Course Catalog */}
             <Link href="/register-landing-page/registration-resources" className={styles.card}>
               <div className={styles.cardContent}>
-                <h2 className={styles.cardTitle}>Prepare for Registration</h2>
-                <p className={styles.cardSubtitle}>For Students only</p>
+                <h2 className={styles.cardTitle}>Course Catalog</h2>
                 <p className={styles.cardDescription}>
-                  View registration status and permit overrides, look up basic
-                  course information like subject, course and description, view
-                  your past schedules and your upgraded classes, browse classes
-                  you find interesting, create and load course plans.
+                  Browse for specific courses, search for deparment specific classes, sort by school or requiements, and find awesome
+                   courses we offer here at USFCA! Learn more about the wide variety of curriculum offered in our school. 
                 </p>
               </div>
               <div className={styles.iconContainer}>
@@ -90,12 +87,30 @@ export default function RegisterPage() {
                 />
               </div>
             </Link>
+            {/* Suggest Classes */}
+            <Link href="/register-landing-page/recommendations" className={styles.card}>
+              <div className={styles.cardContent}>
+                <h2 className={styles.cardTitle}>Class Reccomendations</h2>
+                <p className={styles.cardDescription}>
+                  Search and register for your classes!
+                </p>
+              </div>
+              <div className={styles.iconContainer}>
+                <Image
+                  src="/Icon2.png"
+                  alt="Background"
+                  className={styles.heroImage}
+                  width={100}
+                  height={100}
+                  priority
+                />
+              </div>
+            </Link>
 
             {/* Register for Classes */}
             <Link href="/register-landing-page/register" className={styles.card}>
               <div className={styles.cardContent}>
                 <h2 className={styles.cardTitle}>Register for Classes</h2>
-                <p className={styles.cardSubtitle}>For Students only</p>
                 <p className={styles.cardDescription}>
                   Search and register for your classes. You can also view and
                   manage your schedule.
