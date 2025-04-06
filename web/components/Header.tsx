@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation"; // Import useRouter
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import styles from "../app/page.module.css";
 
@@ -31,8 +31,11 @@ export default function Header() {
         <Link href="/first-years" className={styles.navButton}>
           First Year Information
         </Link>
-        <Link href="/register" className={styles.navButton}>
+        <Link href="/register-landing-page" className={styles.navButton}>
           Course Registration
+        </Link>
+        <Link href="/ap-credit" className={styles.navButton}>
+          AP Credit
         </Link>
         <Link href="/pathways" className={styles.navButton}>
           Pathways
