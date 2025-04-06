@@ -108,20 +108,20 @@ struct Section {
 /**
  * logs in w/ given username
  */
-int login(char* user, mongoc_collection_t* collection);
+int login(char* user, mongoc_collection_t* users_collection);
 
 int logout();
 
 /**
  * returns 0 if successful addition, 1 if not
  */
-int add(int crn, char* plan, mongoc_collection_t* collection, mongoc_collection_t* sections_collection);
+int add(int crn, char* plan, mongoc_collection_t* plans_collection, mongoc_collection_t* sections_collection);
 
-int rm(int crn, char* plan, mongoc_collection_t* collection, mongoc_collection_t* sections_collection);
+int rm(int crn, char* plan, mongoc_collection_t* plans_collection, mongoc_collection_t* sections_collection);
 
-int rmplan(const char* plan, mongoc_collection_t* collection);
+int rmplan(const char* plan, mongoc_collection_t* plans_collection);
 
-int view(char* plan, mongoc_collection_t* collection);
+int view(char* plan, mongoc_collection_t* plans_collection);
 
 int viewplans(mongoc_collection_t* collection);
 
@@ -135,7 +135,7 @@ int browse(char subject[5], char number[16], enum InstructionMode instruction_mo
  * applies set plan to main
  * returns 1 if error
  */
-int apply(char* plan_name, mongoc_collection_t *collection);
+int apply(char* plan, mongoc_collection_t* plans_collection);
 
 /**
  * searches catalog (not necessarily what's offered this sem)

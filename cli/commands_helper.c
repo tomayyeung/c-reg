@@ -16,6 +16,14 @@ void to_lower(char* s) {
     }
 }
 
+// makes a string uppercase in place
+void to_upper(char* s) {
+    while (*s != 0) {
+        if (*s >= 'a' && *s <= 'z') *s += 'A' - 'a';
+        s++;
+    }
+}
+
 void get_password(char* password, int max_len) {
     struct termios oldt, newt;
     printf("Enter password: ");
@@ -171,7 +179,6 @@ void display_section(struct Section* s) {
 }
 
 void display_sections(int n_sections, struct Section** sections) {
-    // printf("nsections: %d\n", n_sections);
     for (int i = 0; i < n_sections; i++) {
         display_section(sections[i]);
     }
@@ -319,9 +326,6 @@ struct Section* crn_to_section(int crn, mongoc_collection_t* sections_collection
 int compare_section_times(const void *a, const void *b) {
     const struct Section* s1 = *(const struct Section**)a;
     const struct Section* s2 = *(const struct Section**)b;
-
-    printf("s1: %s begin: %d end: %d\n", s1->course->name, s1->begin_time, s1->end_time);
-    printf("s2: %s begin: %d end: %d\n", s2->course->name, s2->begin_time, s2->end_time);
 
     if (s1->begin_time < s2->begin_time) return -1;
     if (s1->begin_time > s2->begin_time) return 1;

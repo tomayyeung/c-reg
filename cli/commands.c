@@ -9,14 +9,14 @@
 #include "user.h"
 
 
-int login(char* user, mongoc_collection_t* collection) {
+int login(char* user, mongoc_collection_t* users_collection) {
     // Create a filter BSON document (empty filter means all documents)
     bson_t *filter = bson_new();  // Empty filter to fetch all documents
     const bson_t *reply;
     bson_error_t error;
 
     // Perform the find operation
-    mongoc_cursor_t *cursor = mongoc_collection_find_with_opts(collection, filter, NULL, NULL);
+    mongoc_cursor_t *cursor = mongoc_collection_find_with_opts(users_collection, filter, NULL, NULL);
 
     // Iterate over the cursor
     while (mongoc_cursor_next(cursor, &reply)) {
@@ -43,8 +43,6 @@ int login(char* user, mongoc_collection_t* collection) {
                 return 1;
             }
 
-            // printf("saving username\n");
-            
             save_username(user);
         }
     }
@@ -56,10 +54,9 @@ int login(char* user, mongoc_collection_t* collection) {
     // Cleanup
     bson_destroy(filter);
     mongoc_cursor_destroy(cursor);
-    mongoc_collection_destroy(collection);
+    mongoc_collection_destroy(users_collection);
     mongoc_cleanup();
 
-    // printf("login in commands.c\n");
     return 0;
 }
 
@@ -176,7 +173,7 @@ int rm(int crn, char* plan, mongoc_collection_t* plans_collection, mongoc_collec
     return success ? 0 : 1;
 }
 
-int rmplan(const char *plan, mongoc_collection_t *collection) {
+int rmplan(const char *plan, mongoc_collection_t* plans_collection) {
     char* username = load_username();
     if (username == NULL) {
         fprintf(stderr, "Not logged in\n");
@@ -201,7 +198,7 @@ int rmplan(const char *plan, mongoc_collection_t *collection) {
 
     // Run the update
     bool success = mongoc_collection_update_one(
-        collection, query, update, NULL, NULL, &error
+        plans_collection, query, update, NULL, NULL, &error
     );
 
     if (!success) {
@@ -213,7 +210,7 @@ int rmplan(const char *plan, mongoc_collection_t *collection) {
     return success ? 0 : 1;
 }
 
-int view(char* plan, mongoc_collection_t* collection) {
+int view(char* plan, mongoc_collection_t* plans_collection) {
     char* username = load_username();
     if (username == NULL) {
         fprintf(stderr, "Not logged in\n");
@@ -224,64 +221,74 @@ int view(char* plan, mongoc_collection_t* collection) {
     if (*plan == 0) strcpy(working_plan, "main");
     else strcpy(working_plan, plan);
 
-    bson_t *query;
-    mongoc_cursor_t *cursor;
+    bson_t *query = bson_new();
+
+    // Query to search for the plan document by name
+    BSON_APPEND_UTF8(query, "name", username);
+
+    // Perform the query to find the document
+    mongoc_cursor_t *cursor = mongoc_collection_find_with_opts(plans_collection, query, NULL, NULL);
     const bson_t *doc;
-    bson_iter_t iter, plans_iter, array_iter;
-    bson_error_t error;
 
-    // Build query: { "name": "thomas" }
-    query = BCON_NEW("name", BCON_UTF8(username));
-
-    // Execute query
-    cursor = mongoc_collection_find_with_opts(collection, query, NULL, NULL);
     if (!mongoc_cursor_next(cursor, &doc)) {
-        fprintf(stderr, "User not found or no plans.\n");
+        fprintf(stderr, "No plans found for user: %s\n", username);
         mongoc_cursor_destroy(cursor);
         bson_destroy(query);
         return 1;
     }
 
-    // Navigate to "plans.{plan_name}"
-    if (!(bson_iter_init_find(&iter, doc, "plans") &&
-            BSON_ITER_HOLDS_DOCUMENT(&iter) &&
-            bson_iter_recurse(&iter, &plans_iter))) {
-        fprintf(stderr, "'plans' field missing or invalid.\n");
+    // Access the "plans" sub-document
+    bson_iter_t iter;
+    if (!bson_iter_init_find(&iter, doc, "plans") || !BSON_ITER_HOLDS_DOCUMENT(&iter)) {
+        fprintf(stderr, "Plans field not found or not a document.\n");
         mongoc_cursor_destroy(cursor);
         bson_destroy(query);
         return 1;
     }
 
-    bool found = false;
-    while (bson_iter_next(&plans_iter)) {
-        if (strcmp(bson_iter_key(&plans_iter), working_plan) == 0 &&
-            BSON_ITER_HOLDS_ARRAY(&plans_iter)) {
-            found = true;
-            if (bson_iter_recurse(&plans_iter, &array_iter)) {
-                printf("Plan '%s':\n", working_plan);
-                while (bson_iter_next(&array_iter)) {
-                    if (BSON_ITER_HOLDS_INT32(&array_iter)) {
-                        printf(" - %d\n", bson_iter_int32(&array_iter));
-                    } else {
-                        fprintf(stderr, " non-int element found\n");
-                        return 1;
-                    }
-                }
+    // Extract the "plans" sub-document using bson_iter_document()
+    const uint8_t *data;
+    uint32_t length;
+    bson_iter_document(&iter, &length, &data);  // Extract document data and length
+
+    // Initialize a bson_t from the extracted data
+    bson_t plans_doc;
+    bson_init_static(&plans_doc, data, length);
+
+    // Access the array inside the "plans" sub-document
+    if (!bson_iter_init_find(&iter, &plans_doc, working_plan) || !BSON_ITER_HOLDS_ARRAY(&iter)) {
+        fprintf(stderr, "Array not found or not an array.\n");
+        mongoc_cursor_destroy(cursor);
+        bson_destroy(query);
+        return 1;
+    }
+
+    // Iterate through the array elements
+    bson_iter_t array_iter;
+    if (BSON_ITER_HOLDS_ARRAY(&iter)) {
+        bson_iter_recurse(&iter, &array_iter);  // Initialize an array iterator
+        
+        // Loop through the array
+        printf("Plan '%s':\n", working_plan);
+        while (bson_iter_next(&array_iter)) {
+            if (BSON_ITER_HOLDS_INT32(&array_iter)) {
+                printf(" - %d\n", bson_iter_int32(&array_iter));
             }
-            break;
         }
+    } else {
+        fprintf(stderr, "Main array is not of array type.\n");
+        mongoc_cursor_destroy(cursor);
+        bson_destroy(query);
+        return 1;
     }
 
-    if (!found) {
-        fprintf(stderr, "Plan '%s' not found.\n", plan);
-    }
-
+    // cleanup
     mongoc_cursor_destroy(cursor);
     bson_destroy(query);
-    return found ? 0 : 1;
+    return 0;
 }
 
-int viewplans(mongoc_collection_t* collection) {
+int viewplans(mongoc_collection_t* plans_collection) {
     char* username = load_username();
     if (username == NULL) {
         fprintf(stderr, "Not logged in\n");
@@ -296,7 +303,7 @@ int viewplans(mongoc_collection_t* collection) {
 
     // Query: { name: "thomas" }
     query = BCON_NEW("name", BCON_UTF8(username));
-    cursor = mongoc_collection_find_with_opts(collection, query, NULL, NULL);
+    cursor = mongoc_collection_find_with_opts(plans_collection, query, NULL, NULL);
 
     if (!mongoc_cursor_next(cursor, &doc)) {
         fprintf(stderr, "User '%s' not found or no plans.\n", username);
@@ -306,9 +313,7 @@ int viewplans(mongoc_collection_t* collection) {
     }
 
     // Navigate to "plans"
-    if (!(bson_iter_init_find(&iter, doc, "plans") &&
-          BSON_ITER_HOLDS_DOCUMENT(&iter) &&
-          bson_iter_recurse(&iter, &plans_iter))) {
+    if (!(bson_iter_init_find(&iter, doc, "plans") && BSON_ITER_HOLDS_DOCUMENT(&iter) && bson_iter_recurse(&iter, &plans_iter))) {
         fprintf(stderr, "'plans' field missing or invalid.\n");
         mongoc_cursor_destroy(cursor);
         bson_destroy(query);
@@ -327,11 +332,9 @@ int viewplans(mongoc_collection_t* collection) {
 }
 
 int browse(char subject[5], char number[16], enum InstructionMode instruction_mode_search, int n_attrs, enum Attribute attrs[16], char instructor[256], int n_keywords, char** keywords, mongoc_collection_t* sections_collection, mongoc_collection_t* courses_collection) {
-    // printf("start isntructon mode: %d\n", instruction_mode_search);
-    // printf("browse subject: %s\n", subject);
-    // printf("browse number: %s\n", number);
+    to_upper(subject);
+
     HashTable* courses_map = init_courses(courses_collection);
-    // printf("created hash table in browse\n");
 
     struct Section* sections[MAX_BROWSE];
     int i = 0;
@@ -346,47 +349,32 @@ int browse(char subject[5], char number[16], enum InstructionMode instruction_mo
 
     // Iterate over the cursor
     while (mongoc_cursor_next(cursor, &reply)) {
-        // printf("loop\n");
         if (i >= MAX_BROWSE) break;
 
         bson_iter_t iter;
 
-        // create course from section
+        // create course from section to compare subject/course num
         const char* iter_course;
         if (bson_iter_init_find(&iter, reply, "course") && BSON_ITER_HOLDS_UTF8(&iter)) {
             iter_course = bson_iter_utf8(&iter, NULL);
         }
-        // printf("course: %s\n", iter_course);
+
         struct Course* course = course_from_section(courses_map, iter_course);
         if (course == 0) {
             continue;
         }
-        // printf("searching for subject: %s\n", subject);
-        // printf("current subject: %s\n", course->subject);
 
         // search subject
         if (*subject != 0) {
-            // printf("in if\n");
-            // printf("course name: %s\n", course->name);
-            // printf("course subject: %s\n", course->subject);
             if (strcmp(subject, course->subject) != 0) {
-                // printf("skipped - subject: %s course->subject: %s\n", subject, course->subject);
                 continue;
             }
         }
-        // printf("found course: %s%s\n", course->subject, course->number);
-        // printf("mid isntructon mode: %d\n", instruction_mode_search);
 
         // search course number
         if (*number != 0) {
-            // printf("course number %s\n", (course->number));
             if (strcmp(number, course->number) != 0) continue;
         }
-        // printf("efghhere\n");
-
-        // search crn
-        int iter_crn;
-        if (bson_iter_init_find(&iter, reply, "crn") && BSON_ITER_HOLDS_INT32(&iter)) iter_crn = bson_iter_int32(&iter);
 
         // search instruction mode
         int iter_instruction_mode;
@@ -399,6 +387,7 @@ int browse(char subject[5], char number[16], enum InstructionMode instruction_mo
         // search attributes
 
         // search instructor
+        // build instructor name
         const char* iter_instructor_first;
         if (bson_iter_init_find(&iter, reply, "instructor_first") && BSON_ITER_HOLDS_UTF8(&iter)) iter_instructor_first = bson_iter_utf8(&iter, NULL);
         const char* iter_instructor_last;
@@ -406,74 +395,19 @@ int browse(char subject[5], char number[16], enum InstructionMode instruction_mo
 
         char instructor_name[256];
         sprintf(instructor_name, "%s %s", iter_instructor_first, iter_instructor_last);
-        // printf("HERE instruction mode: %d\n", instruction_mode_search);
         if (*instructor != 0) {
-            // printf("abcdhere\n");
             if (strcmp(instructor, instructor_name) != 0) continue;
         }
-        // printf("passed instructionmode test %d\n", instruction_mode_search);
 
-        // grab other fields
-        int iter_section_num;
-        if (bson_iter_init_find(&iter, reply, "section_num") && BSON_ITER_HOLDS_INT32(&iter)) iter_section_num = bson_iter_int32(&iter);
-        const char* iter_sched_type;
-        if (bson_iter_init_find(&iter, reply, "schedule_type") && BSON_ITER_HOLDS_UTF8(&iter)) iter_sched_type = bson_iter_utf8(&iter, NULL);
-        int* iter_days;
-        if (bson_iter_init_find(&iter, reply, "days") && BSON_ITER_HOLDS_UTF8(&iter)) iter_days = days_str_to_arr(bson_iter_utf8(&iter, NULL));
-        int iter_begin_time;
-        if (bson_iter_init_find(&iter, reply, "begin_time") && BSON_ITER_HOLDS_INT32(&iter)) iter_begin_time = bson_iter_int32(&iter);
-        int iter_end_time;
-        if (bson_iter_init_find(&iter, reply, "end_time") && BSON_ITER_HOLDS_INT32(&iter)) iter_end_time = bson_iter_int32(&iter);
-        const char* iter_start_date;
-        if (bson_iter_init_find(&iter, reply, "start_date") && BSON_ITER_HOLDS_UTF8(&iter)) iter_start_date = bson_iter_utf8(&iter, NULL);
-        const char* iter_end_date;
-        if (bson_iter_init_find(&iter, reply, "end_date") && BSON_ITER_HOLDS_UTF8(&iter)) iter_end_date = bson_iter_utf8(&iter, NULL);
-        const char* iter_building;
-        if (bson_iter_init_find(&iter, reply, "building") && BSON_ITER_HOLDS_UTF8(&iter)) iter_building = bson_iter_utf8(&iter, NULL);
-        const char* iter_room;
-        if (bson_iter_init_find(&iter, reply, "room") && BSON_ITER_HOLDS_UTF8(&iter)) iter_room = bson_iter_utf8(&iter, NULL);
-        int iter_capacity;
-        if (bson_iter_init_find(&iter, reply, "capacity") && BSON_ITER_HOLDS_INT32(&iter)) iter_capacity = bson_iter_int32(&iter);
-        int iter_enrollment;
-        if (bson_iter_init_find(&iter, reply, "enrollment") && BSON_ITER_HOLDS_INT32(&iter)) iter_enrollment = bson_iter_int32(&iter);
-        const char* iter_instructor_email;
-        if (bson_iter_init_find(&iter, reply, "instructor_email") && BSON_ITER_HOLDS_UTF8(&iter)) iter_instructor_email = bson_iter_utf8(&iter, NULL);
-        const char* iter_college;
-        if (bson_iter_init_find(&iter, reply, "college") && BSON_ITER_HOLDS_UTF8(&iter)) iter_college = bson_iter_utf8(&iter, NULL);
-        
+        // all tests passed - add this section
 
-        // printf("before creating s instruction mode %d\n", instruction_mode_search);
-        // search keywords
-        struct Section *s = (struct Section*) malloc(sizeof(struct Section));
-        s->course = course;
-        s->section_num = iter_section_num;
-        s->crn = iter_crn;
-        strcpy(s->schedule_type, iter_sched_type);
-        // printf("xyzhere\n");
-        // printf("instruction mode %d\n", instruction_mode_search);
-        s->instruction_mode = (enum InstructionMode)(iter_instruction_mode);
-        // s->instruction_mode = Hybrid;
-        // printf("lmnophere\n");
-        s->days = iter_days;
-        s->begin_time = iter_begin_time;
-        s->end_time = iter_end_time;
-        strcpy(s->start_date, iter_start_date);
-        strcpy(s->end_date, iter_end_date);
-        strcpy(s->building, iter_building);
-        strcpy(s->room, iter_room);
-        s->capacity = iter_capacity;
-        s->enrollment = iter_enrollment;
-        strcpy(s->instructor_first, iter_instructor_first);
-        strcpy(s->instructor_last, iter_instructor_last);
-        strcpy(s->instructor_email, iter_instructor_email);
-        strcpy(s->college, iter_college);
-
-        // printf("end isntruciton mode %d\n", instruction_mode_search);
-
+        // grab crn
+        int iter_crn;
+        if (bson_iter_init_find(&iter, reply, "crn") && BSON_ITER_HOLDS_INT32(&iter)) iter_crn = bson_iter_int32(&iter);
+        struct Section *s = crn_to_section(iter_crn, sections_collection, courses_map);
 
         sections[i++] = s;
     }
-    // printf("finished browsing\n");
 
     if (mongoc_cursor_error(cursor, &error)) {
         fprintf(stderr, "Cursor error: %s\n", error.message);
@@ -488,18 +422,11 @@ int browse(char subject[5], char number[16], enum InstructionMode instruction_mo
     mongoc_collection_destroy(sections_collection);
     mongoc_collection_destroy(courses_collection);
     mongoc_cleanup();
-    
-    // printf("searching subject: %s\n", subject);
-    // printf("searching number: %d\n", number);
-    // printf("searching instruction mode: %d\n", (instruction_mode_search));
-    // printf("searching n attrs: %d\n", n_attrs);
-    // printf("searching instructor: %s\n", instructor);
-    // printf("searching n keywords: %d\n", n_keywords);
 
     return 0;
 }
 
-int apply(char* plan, mongoc_collection_t *collection) {
+int apply(char* plan, mongoc_collection_t* plans_collection) {
     char* username = load_username();
     if (username == NULL) {
         fprintf(stderr, "Not logged in\n");
@@ -518,7 +445,7 @@ int apply(char* plan, mongoc_collection_t *collection) {
     snprintf(full_src_path, sizeof(full_src_path), "plans.%s", plan);
 
     query = BCON_NEW("name", BCON_UTF8(username));
-    cursor = mongoc_collection_find_with_opts(collection, query, NULL, NULL);
+    cursor = mongoc_collection_find_with_opts(plans_collection, query, NULL, NULL);
 
     if (!mongoc_cursor_next(cursor, &doc)) {
         fprintf(stderr, "No document found.\n");
@@ -568,7 +495,7 @@ int apply(char* plan, mongoc_collection_t *collection) {
     }
     bson_append_document_end(update, &child);
 
-    if (!mongoc_collection_update_one(collection, query, update, NULL, NULL, &error)) {
+    if (!mongoc_collection_update_one(plans_collection, query, update, NULL, NULL, &error)) {
         fprintf(stderr, "Update failed: %s\n", error.message);
         bson_destroy(query);
         bson_destroy(update);
@@ -653,9 +580,7 @@ int schedule(char* plan, mongoc_collection_t* courses_collection, mongoc_collect
         // Loop through the array
         while (bson_iter_next(&array_iter)) {
             if (BSON_ITER_HOLDS_INT32(&array_iter)) {
-                // printf("here\n");
                 sections[sectionsI++] = crn_to_section(bson_iter_int32(&array_iter), sections_collection, courses_map);
-                // printf("there\n");
             }
         }
     } else {
@@ -666,8 +591,12 @@ int schedule(char* plan, mongoc_collection_t* courses_collection, mongoc_collect
     }
 
     // cleanup
-    mongoc_cursor_destroy(cursor);
     bson_destroy(query);
+    mongoc_cursor_destroy(cursor);
+    mongoc_collection_destroy(courses_collection);
+    mongoc_collection_destroy(plans_collection);
+    mongoc_collection_destroy(sections_collection);
+    mongoc_cleanup();
 
     // sort sections for each day
     int num_sections_by_day[7] = {0, 0, 0, 0, 0, 0, 0};

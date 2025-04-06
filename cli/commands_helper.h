@@ -4,6 +4,7 @@
 #define COMMANDS_HELPER
 
 void to_lower(char* s);
+void to_upper(char* s);
 void get_password(char* password, int max_len);
 char* attr_to_str(enum Attribute a);
 enum Attribute str_to_attr(char* s);

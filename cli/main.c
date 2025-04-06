@@ -7,17 +7,82 @@
 #include "commands_helper.h"
 
 void print_help() {
-    printf("Usage: [-h | --help] creg <command> [<args>]");
+    printf("Usage: creg [-h | --help] <command> [<args>]");
     printf("\nCommands:\n");
     printf("  login     Login using your USF ID\n");
     printf("  logout    Log out from creg\n");
-    printf("  add       Add a course to main or current plan\n");
+    printf("  add       Add a section to main or plan\n");
+    printf("  rm        Remove a course from main or plan\n");
+    printf("  rmplan    Remove a plan and all sections added\n");
+    printf("  view      View sections added to main or plan\n");
+    printf("  viewplans View a list of all plans\n");
     printf("  browse    Search for classes offered this semester\n");
-    printf("  plan      Set working plan\n");
-    printf("  apply     Register for classes in a plan\n");
-    printf("  cbrowse   Browse catalog for all USF courses\n");
-    printf("  degree    Show degree progress\n");
-    printf("  schedule  Show current weekly schedule\n");
+    printf("  apply     Add all for sections in a plan to main registration\n");
+    // printf("  cbrowse   Browse catalog for all USF courses\n");
+    // printf("  degree    Show degree progress\n");
+    printf("  schedule  Show weekly schedule of main or plan\n");
+}
+
+void print_help_login() {
+    printf("Usage: creg login [username]\n");
+    printf("  You will then be prompted for your password.\n");
+}
+
+void print_help_logout() {
+    printf("Usage: creg logout\n");
+}
+
+void print_help_add() {
+    printf("Usage: creg add [crn] [-p | --plan=<name>]\n");
+    printf("  Adds given crn to specified plan\n");
+    printf("  If no plan is specified, adds to main registration\n");
+    printf("  If plan does not exist, creates a new plan with the given name\n");
+}
+
+void print_help_rm() {
+    printf("Usage: creg rm [crn] [-p | --plan=<name>]\n");
+    printf("  Removes given crn from specified plan\n");
+    printf("  If no plan is specified, removes from main registration\n");
+}
+
+void print_help_rmplan() {
+    printf("Usage: creg rmplan [name]\n");
+    printf("  Removes given plan and all added sections\n");
+    printf("  This command is irreversible\n");
+}
+
+void print_help_view() {
+    printf("Usage: creg view [-p | --plan=<name>]\n");
+    printf("  Views all sections aded to specified plan\n");
+    printf("  If no plan is specified, views main registration\n");
+}
+
+void print_help_viewplans() {
+    printf("Usage: creg viewplans\n");
+    printf("  Views all created plans\n");
+}
+
+void print_help_browse() {
+    printf("Usage: creg browse [-s | --subject<subject>] [-n | --number<number>] [-I | --instruction<instrmethod>] \n");
+    printf("    [-a | --aatributes<attributes>]  [-i | --instructor<name>] [-k | --keywords<keywords>]\n");
+    printf("  Browses all sections with given search queries:\n");
+    printf("    [-s | --subject<subject>] searches for the given subject, eg CS.\n");
+    printf("    [-n | --number<number>] searches for a specified course number, eg 221 for CS 221.\n");
+    printf("    [-I | --instruction<instrmethod>] searches for the given instructional method: InPerson, Online, Hybrid.\n");
+    printf("    [-a | --attributes<attributes>] to be added\n");
+    printf("    [-i | --instructor<name>] searches for the given instructor name. Place the name inside quotes, eg \"Paul Haskell\".\n");
+    printf("    [-k | --keywords<keywords>] to be added\n");
+}
+
+void print_help_apply() {
+    printf("Usage: creg apply [name]\n");
+    printf("  Empties main registration and adds all sections in given plan.\n");
+}
+
+void print_help_schedule() {
+    printf("Usage: creg schedule [-p | --plan=<name>]\n");
+    printf("  Displays weekly schedule of given plan.\n");
+    printf("  Sections are sorted by day and time.\n");
 }
 
 int handle_login(int argc, char** argv, mongoc_client_t* client) {
@@ -26,9 +91,9 @@ int handle_login(int argc, char** argv, mongoc_client_t* client) {
         return 1;
     }
 
-    mongoc_collection_t* collection = mongoc_client_get_collection(client, "c-reg_DB", "users");
+    mongoc_collection_t* users_collection = mongoc_client_get_collection(client, "c-reg_DB", "users");
     
-    return login(argv[2], collection);
+    return login(argv[2], users_collection);
 }
 
 int handle_logout() {
@@ -117,8 +182,8 @@ int handle_rmplan(int argc, char** argv, mongoc_client_t* client) {
         return 1;
     }
 
-    mongoc_collection_t* collection = mongoc_client_get_collection(client, "c-reg_DB", "plans");
-    return rmplan(argv[2], collection);
+    mongoc_collection_t* plans_collection = mongoc_client_get_collection(client, "c-reg_DB", "plans");
+    return rmplan(argv[2], plans_collection);
 }
 
 int handle_view(int argc, char** argv, mongoc_client_t* client) {
@@ -140,13 +205,13 @@ int handle_view(int argc, char** argv, mongoc_client_t* client) {
         }
     }
 
-    mongoc_collection_t* collection = mongoc_client_get_collection(client, "c-reg_DB", "plans");
-    return view(plan, collection);    
+    mongoc_collection_t* plans_collection = mongoc_client_get_collection(client, "c-reg_DB", "plans");
+    return view(plan, plans_collection);    
 }
 
 int handle_viewplans(mongoc_client_t* client) {
-    mongoc_collection_t* collection = mongoc_client_get_collection(client, "c-reg_DB", "plans");
-    return viewplans(collection);
+    mongoc_collection_t* plans_collection = mongoc_client_get_collection(client, "c-reg_DB", "plans");
+    return viewplans(plans_collection);
 }
 
 int handle_browse(int argc, char** argv, mongoc_client_t* client) {
@@ -278,8 +343,8 @@ int handle_apply(int argc, char** argv, mongoc_client_t* client) {
         return 1;
     }
 
-    mongoc_collection_t* collection = mongoc_client_get_collection(client, "c-reg_DB", "plans");
-    return apply(argv[2], collection);
+    mongoc_collection_t* plans_collection = mongoc_client_get_collection(client, "c-reg_DB", "plans");
+    return apply(argv[2], plans_collection);
 }
 
 int handle_schedule(int argc, char** argv, mongoc_client_t* client) {
@@ -300,7 +365,7 @@ int handle_schedule(int argc, char** argv, mongoc_client_t* client) {
                 break;
         }
     }
-    
+
     mongoc_collection_t* courses_collection = mongoc_client_get_collection(client, "c-reg_DB", "courses");
     mongoc_collection_t* plans_collection = mongoc_client_get_collection(client, "c-reg_DB", "plans");
     mongoc_collection_t* sections_collection = mongoc_client_get_collection(client, "c-reg_DB", "sections");
@@ -313,10 +378,13 @@ int main(int argc, char** argv) {
         return 1;
     }
 
+    int help = 0;
+    int command_i = 1;
+
     // handle global options before command
     if (strcmp(argv[1], "--help") == 0 || strcmp(argv[1], "-h") == 0) {
-        print_help();
-        return 0;
+        command_i++;
+        help = 1;
     }
 
     mongoc_init();
@@ -329,31 +397,72 @@ int main(int argc, char** argv) {
     }
 
     // handle commands
-    const char* command = argv[1];
+    const char* command = argv[command_i];
     if (strcmp(command, "login") == 0) {
-       return handle_login(argc, argv, client);
+        if (help) {
+            print_help_login();
+            return 0;
+        }
+        return handle_login(argc, argv, client);
+    } else if (strcmp(command, "logout") == 0) {
+        if (help) {
+            print_help_logout();
+            return 0;
+        }
+        return handle_logout();
     } else if (strcmp(command, "add") == 0) {
+        if (help) {
+            print_help_add();
+            return 0;
+        }
         return handle_add(argc, argv, client);
     } else if (strcmp(command, "rm") == 0) {
+        if (help) {
+            print_help_rm();
+            return 0;
+        }
         return handle_rm(argc, argv, client);
     } else if (strcmp(command, "rmplan") == 0) {
+        if (help) {
+            print_help_rmplan();
+            return 0;
+        }
         return handle_rmplan(argc, argv, client);
     } else if (strcmp(command, "view") == 0) {
+        if (help) {
+            print_help_view();
+            return 0;
+        }
         return handle_view(argc, argv, client);
     } else if (strcmp(command, "viewplans") == 0) {
+        if (help) {
+            print_help_viewplans();
+            return 0;
+        }
         return handle_viewplans(client);
     } else if (strcmp(command, "browse") == 0) {
+        if (help) {
+            print_help_browse();
+            return 0;
+        }
         return handle_browse(argc, argv, client);
-    } else if (strcmp(command, "logout") == 0) {
-        return handle_logout();
     } else if (strcmp(command, "apply") == 0) {
+        if (help) {
+            print_help_apply();
+            return 0;
+        }
         return handle_apply(argc, argv, client);
     } else if (strcmp(command, "schedule") == 0) {
+        if (help) {
+            print_help_schedule();
+            return 0;
+        }
         return handle_schedule(argc, argv, client);
     }
     else {
-        fprintf(stderr, "Unknown command: %s\n", command);
         print_help();
+        if (help) return 0;
+        fprintf(stderr, "Unknown command: %s\n", command);
         return 1;
     }
 }
