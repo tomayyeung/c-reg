@@ -201,10 +201,7 @@ int handle_browse(int argc, char** argv, mongoc_client_t* client) {
                         fprintf(stderr, "Too many arguments for creg browse --attributes\n");
                         return 1;
                     }
-                    if ((attrs[n_attrs++] = str_to_attr(token)) == 0) {
-                        fprintf(stderr, "Invalid argument for creg browse --attributes\n");
-                        return 1;
-                    }
+
                     token = strtok(NULL, delimiter); // Subsequent calls use NULL
                 }
 
@@ -235,10 +232,7 @@ int handle_browse(int argc, char** argv, mongoc_client_t* client) {
                         fprintf(stderr, "Too many arguments for creg browse --keywords\n");
                         return 1;
                     }
-                    if ((keywords[n_keywords++] = token) == 0) {
-                        fprintf(stderr, "Invalid argument for creg browse --keywords\n");
-                        return 1;
-                    }
+
                     token = strtok(NULL, delimiter); // Subsequent calls use NULL
                 }
 
@@ -323,10 +317,7 @@ int handle_cbrowse(int argc, char** argv, mongoc_client_t* client) {
                         fprintf(stderr, "Too many arguments for creg cbrowse --attributes\n");
                         return 1;
                     }
-                    if ((attrs[n_attrs++] = str_to_attr(token)) == 0) {
-                        fprintf(stderr, "Invalid argument for creg cbrowse --attributes\n");
-                        return 1;
-                    }
+
                     token = strtok(NULL, delimiter); // Subsequent calls use NULL
                 }
 
@@ -349,10 +340,7 @@ int handle_cbrowse(int argc, char** argv, mongoc_client_t* client) {
                         fprintf(stderr, "Too many arguments for creg browse --keywords\n");
                         return 1;
                     }
-                    if ((keywords[n_keywords++] = token) == 0) {
-                        fprintf(stderr, "Invalid argument for creg browse --keywords\n");
-                        return 1;
-                    }
+
                     token = strtok(NULL, delimiter); // Subsequent calls use NULL
                 }
 

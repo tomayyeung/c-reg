@@ -16,9 +16,5 @@ void display_section(struct Section* s, int verbose);
 void display_sections(int n_sections, struct Section** sections, int verbose);
 void display_course(struct Course* c, int verbose);
 void display_courses(int n_courses, struct Course** courses, int verbose);
-int add_to_section(int crn, mongoc_collection_t* sections_collection, int addition);
-int crn_exists(int crn, char* username, char* plan, mongoc_collection_t* plans_collection);
-struct Section* crn_to_section(int crn, mongoc_collection_t* sections_collection, HashTable* courses_map);
-int compare_section_times(const void *a, const void *b);
 
 #endif

@@ -419,6 +419,26 @@ int browse(char subject[5], char number[16], enum InstructionMode instruction_mo
         if (bson_iter_init_find(&iter, reply, "crn") && BSON_ITER_HOLDS_INT32(&iter)) iter_crn = bson_iter_int32(&iter);
         struct Section *s = crn_to_section(iter_crn, sections_collection, courses_map);
 
+        // search keywords
+        int all_keywords_found = 1;
+        for (int i = 0; i < n_keywords; i++) {
+            int keyword_found = 0;
+            char* kw = keywords[i];
+            if (strstr(kw, s->course->subject)) keyword_found = 1;
+            else if (strstr(kw, s->course->number)) keyword_found = 1;
+            else if (strstr(kw, s->course->name)) keyword_found = 1;
+            else if (strstr(kw, s->course->descr)) keyword_found = 1;
+            else if (strstr(kw, s->course->prereq)) keyword_found = 1;
+            else if (strstr(kw, s->course->restr)) keyword_found = 1;
+            else if (strstr(kw, s->course->college)) keyword_found = 1;
+            else if (strstr(kw, s->instructor_first)) keyword_found = 1;
+            else if (strstr(kw, s->instructor_last)) keyword_found = 1;
+
+            all_keywords_found &= keyword_found;
+            if (!keyword_found) break; // leave early - missing a keyword
+        }
+        if (!all_keywords_found) continue;
+
         sections[i++] = s;
     }
 
@@ -539,54 +559,41 @@ int cbrowse(char subject[5], char number[16], int n_attrs, enum Attribute attrs[
 
     // Iterate over the cursor
     while (mongoc_cursor_next(cursor, &reply)) {
-        if (i >= MAX_BROWSE) break;
-
         bson_iter_t iter;
+        struct Course* c = create_course_from_cursor(iter, reply);
+        if (c == 0) continue;
 
         // search subject
-        const char* iter_subj;
-        if (bson_iter_init_find(&iter, reply, "subject") && BSON_ITER_HOLDS_UTF8(&iter)) iter_subj = bson_iter_utf8(&iter, NULL);
         if (*subject != 0) {
-            if (strcmp(subject, iter_subj) != 0) continue;
+            if (strcmp(subject, c->subject) != 0) continue;
         }
 
         // search number
-        const char* iter_num;
-        if (bson_iter_init_find(&iter, reply, "number") && BSON_ITER_HOLDS_UTF8(&iter)) iter_num = bson_iter_utf8(&iter, NULL);
         if (*number != 0) {
-            if (strcmp(subject, iter_num) != 0) continue;
+            if (strcmp(number, c->number) != 0) continue;
         }
 
-        // search attributes
-
         // search keywords
+        int all_keywords_found = 1;
+        for (int i = 0; i < n_keywords; i++) {
+            int keyword_found = 0;
+            char* kw = keywords[i];
+            if (strstr(kw, c->subject)) keyword_found = 1;
+            else if (strstr(kw, c->number)) keyword_found = 1;
+            else if (strstr(kw, c->name)) keyword_found = 1;
+            else if (strstr(kw, c->descr)) keyword_found = 1;
+            else if (strstr(kw, c->prereq)) keyword_found = 1;
+            else if (strstr(kw, c->restr)) keyword_found = 1;
+            else if (strstr(kw, c->college)) keyword_found = 1;
+            
+            all_keywords_found &= keyword_found;
+            if (!keyword_found) break; // leave early - missing a keyword
+        }
+        if (!all_keywords_found) continue;
 
         // all tests passed - add this course
-
-        const char* iter_name;
-        if (bson_iter_init_find(&iter, reply, "course_title") && BSON_ITER_HOLDS_UTF8(&iter)) iter_name = bson_iter_utf8(&iter, NULL);
-        const char* iter_units;
-        if (bson_iter_init_find(&iter, reply, "units") && BSON_ITER_HOLDS_UTF8(&iter)) iter_units = bson_iter_utf8(&iter, NULL);
-        const char* iter_descr;
-        if (bson_iter_init_find(&iter, reply, "description") && BSON_ITER_HOLDS_UTF8(&iter)) iter_descr = bson_iter_utf8(&iter, NULL);
-        const char* iter_prereq;
-        if (bson_iter_init_find(&iter, reply, "prerequisites") && BSON_ITER_HOLDS_UTF8(&iter)) iter_prereq = bson_iter_utf8(&iter, NULL);
-        const char* iter_restr;
-        if (bson_iter_init_find(&iter, reply, "restrictions") && BSON_ITER_HOLDS_UTF8(&iter)) iter_restr = bson_iter_utf8(&iter, NULL);
-        const char* iter_college;
-        if (bson_iter_init_find(&iter, reply, "college") && BSON_ITER_HOLDS_UTF8(&iter)) iter_college = bson_iter_utf8(&iter, NULL);
-
-        struct Course* c = (struct Course*) malloc(sizeof(struct Course));
-        c->subject = iter_subj;
-        c->number = iter_num;
-        c->name = iter_name;
-        c->units = iter_units;
-        c->descr = iter_descr;
-        c->prereq = iter_prereq;
-        c->restr = iter_restr;
-        c->college = iter_college;
-
         courses[i++] = c;
+        if (i >= MAX_BROWSE) break;
     }
 
     if (mongoc_cursor_error(cursor, &error)) {
@@ -594,6 +601,7 @@ int cbrowse(char subject[5], char number[16], int n_attrs, enum Attribute attrs[
         return 1;
     }
 
+    printf("num courss: %d\n", i);
     display_courses(i, courses, verbose);
 
     // Cleanup
