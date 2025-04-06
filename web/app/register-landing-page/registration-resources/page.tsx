@@ -14,14 +14,17 @@ interface Course {
   prerequisites: string;
   restrictions: string;
   college: string;
+  // Optionally, you can add subject if needed:
+  // subject: string;
 }
 
 export default function CourseCatalog() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [colleges, setColleges] = useState<string[]>([]);
+  const [subjects, setSubjects] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCollege, setSelectedCollege] = useState("");
-  const [restrictionsFilter, setRestrictionsFilter] = useState("");
+  const [selectedSubject, setSelectedSubject] = useState("");
   const [prerequisitesFilter, setPrerequisitesFilter] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -49,7 +52,7 @@ export default function CourseCatalog() {
       const params = new URLSearchParams();
       if (searchTerm) params.append("search", searchTerm);
       if (selectedCollege) params.append("college", selectedCollege);
-      if (restrictionsFilter) params.append("restrictions", restrictionsFilter);
+      if (selectedSubject) params.append("subject", selectedSubject);
       if (prerequisitesFilter)
         params.append("hasPrerequisites", prerequisitesFilter);
       params.append("page", page.toString());
@@ -73,6 +76,11 @@ export default function CourseCatalog() {
         setColleges(data.colleges);
       }
 
+      // Set subjects for dropdown if available
+      if (data.subjects && Array.isArray(data.subjects)) {
+        setSubjects(data.subjects);
+      }
+
       setTotalPages(data.totalPages || 1);
       setCurrentPage(data.currentPage || 1);
     } catch (err) {
@@ -91,7 +99,7 @@ export default function CourseCatalog() {
   const handleReset = () => {
     setSearchTerm("");
     setSelectedCollege("");
-    setRestrictionsFilter("");
+    setSelectedSubject("");
     setPrerequisitesFilter("");
     setCurrentPage(1);
     fetchCourses(1);
@@ -152,21 +160,24 @@ export default function CourseCatalog() {
                 </select>
               </div>
 
+              {/* Subject dropdown replaces Restrictions filter */}
               <div className={styles["filter-group"]}>
-                <label
-                  className={styles["filter-label"]}
-                  htmlFor="restrictions"
-                >
-                  Restrictions
+                <label className={styles["filter-label"]} htmlFor="subject">
+                  Subject
                 </label>
-                <input
-                  id="restrictions"
-                  type="text"
-                  placeholder="Filter by restrictions"
-                  className={styles["filter-input"]}
-                  value={restrictionsFilter}
-                  onChange={(e) => setRestrictionsFilter(e.target.value)}
-                />
+                <select
+                  id="subject"
+                  className={styles["filter-select"]}
+                  value={selectedSubject}
+                  onChange={(e) => setSelectedSubject(e.target.value)}
+                >
+                  <option value="">All Subjects</option>
+                  {subjects.map((subject) => (
+                    <option key={subject} value={subject}>
+                      {subject}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div className={styles["filter-group"]}>
@@ -206,98 +217,98 @@ export default function CourseCatalog() {
         </div>
         <div className={styles["catalog-layout"]}>
           <div className={styles["card-content"]}>
-              {loading ? (
-                <div className={styles["loading-message"]}>
-                  Loading courses...
-                </div>
-              ) : courses.length === 0 ? (
-                <div className={styles["empty-message"]}>
-                  No courses found matching your criteria.
-                </div>
-              ) : (
-                <div className={styles["courses-list"]}>
-                  {courses.map((course) => (
-                    <div key={course._id} className={styles["course-card"]}>
-                      <div className={styles["course-header"]}>
-                        <h3 className={styles["course-title"]}>
-                          {course.course_title}
-                          <span className={styles["units-badge"]}>
-                            {course.units}{" "}
-                            {Number.parseInt(course.units) === 1
-                              ? "Unit"
-                              : "Units"}
-                          </span>
-                        </h3>
-                        <p className={styles["course-code"]}>
-                          {course.course_code}
-                        </p>
-                        <p className={styles["course-college"]}>
-                          {course.college}
+            {loading ? (
+              <div className={styles["loading-message"]}>
+                Loading courses...
+              </div>
+            ) : courses.length === 0 ? (
+              <div className={styles["empty-message"]}>
+                No courses found matching your criteria.
+              </div>
+            ) : (
+              <div className={styles["courses-list"]}>
+                {courses.map((course) => (
+                  <div key={course._id} className={styles["course-card"]}>
+                    <div className={styles["course-header"]}>
+                      <h3 className={styles["course-title"]}>
+                        {course.course_title}
+                        <span className={styles["units-badge"]}>
+                          {course.units}{" "}
+                          {Number.parseInt(course.units) === 1
+                            ? "Unit"
+                            : "Units"}
+                        </span>
+                      </h3>
+                      <p className={styles["course-code"]}>
+                        {course.course_code}
+                      </p>
+                      <p className={styles["course-college"]}>
+                        {course.college}
+                      </p>
+                    </div>
+                    <div className={styles["course-details"]}>
+                      <div className={styles["course-section"]}>
+                        <h4 className={styles["section-title"]}>
+                          Description
+                        </h4>
+                        <p className={styles["section-content"]}>
+                          {course.description || (
+                            <span className={styles["empty-value"]}>
+                              No description available
+                            </span>
+                          )}
                         </p>
                       </div>
-                      <div className={styles["course-details"]}>
+
+                      {course.prerequisites && (
                         <div className={styles["course-section"]}>
                           <h4 className={styles["section-title"]}>
-                            Description
+                            Prerequisites
                           </h4>
                           <p className={styles["section-content"]}>
-                            {course.description || (
-                              <span className={styles["empty-value"]}>
-                                No description available
-                              </span>
-                            )}
+                            {course.prerequisites}
                           </p>
                         </div>
+                      )}
 
-                        {course.prerequisites && (
-                          <div className={styles["course-section"]}>
-                            <h4 className={styles["section-title"]}>
-                              Prerequisites
-                            </h4>
-                            <p className={styles["section-content"]}>
-                              {course.prerequisites}
-                            </p>
-                          </div>
-                        )}
-
-                        {course.restrictions && (
-                          <div className={styles["course-section"]}>
-                            <h4 className={styles["section-title"]}>
-                              Restrictions
-                            </h4>
-                            <p className={styles["section-content"]}>
-                              {course.restrictions}
-                            </p>
-                          </div>
-                        )}
-                      </div>
+                      {course.restrictions && (
+                        <div className={styles["course-section"]}>
+                          <h4 className={styles["section-title"]}>
+                            Restrictions
+                          </h4>
+                          <p className={styles["section-content"]}>
+                            {course.restrictions}
+                          </p>
+                        </div>
+                      )}
                     </div>
-                  ))}
-                </div>
-              )}
+                  </div>
+                ))}
+              </div>
+            )}
 
-              {totalPages > 1 && (
-                <div className={styles.pagination}>
-                  <button
-                    className={styles["pagination-button"]}
-                    onClick={() => handlePageChange(currentPage - 1)}
-                    disabled={currentPage === 1}
-                  >
-                    Previous
-                  </button>
-                  <span className={styles["page-info"]}>
-                    Page {currentPage} of {totalPages}
-                  </span>
-                  <button
-                    className={styles["pagination-button"]}
-                    onClick={() => handlePageChange(currentPage + 1)}
-                    disabled={currentPage === totalPages}
-                  >
-                    Next
-                  </button>
-                </div>
-              )}
-            </div>
+            {totalPages > 1 && (
+              <div className={styles.pagination}>
+                <button
+                  className={styles["pagination-button"]}
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                >
+                  Previous
+                </button>
+                <span className={styles["page-info"]}>
+                  Page {currentPage} of {totalPages}
+                </span>
+                <button
+                  className={styles["pagination-button"]}
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                >
+                  Next
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </>
