@@ -25,6 +25,7 @@ export default function ComputerSciencePathway() {
   const [csScore, setCsScore] = useState<number>(0); // Default to 0
   const [mathRecommendation, setMathRecommendation] = useState<string | null>(null);
   const [csRecommendation, setCsRecommendation] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   useEffect(() => {
     if (mathScore !== null) {
@@ -75,6 +76,66 @@ export default function ComputerSciencePathway() {
       setCsScore(numericValue);
     }
   };
+
+  const handleAddTestsToAccount = async () => {
+    console.log(mathScore, csScore);
+
+    if (mathScore < 0 || mathScore > 100 || csScore < 0 || csScore > 100) {
+      alert("Please enter valid scores.");
+      return;
+    }
+
+    const username = localStorage.getItem("currentUser");
+    if (!username) {
+      alert("Please log in first.");
+      return;
+    }
+
+    // Add scores
+    try {
+      // Add CS Placement Test score
+      const csResponse = await fetch("/api/placement-test", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          username,
+          placementTestName: "CS Placement Test",
+          placementTestScore: csScore,
+        }),
+      });
+
+      if (!csResponse.ok) {
+        throw new Error("Failed to add CS placement test score.");
+      }
+
+      // Add Math Placement Test score
+      const mathResponse = await fetch("/api/placement-test", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          username,
+          placementTestName: "Math Placement Test",
+          placementTestScore: mathScore,
+        }),
+      });
+
+      if (!mathResponse.ok) {
+        throw new Error("Failed to add Math placement test score.");
+      }
+
+      // Success
+      setSuccessMessage("Placement Tests successfully added to your account!");
+      setTimeout(() => setSuccessMessage(null), 5000); // Clear message after 5 seconds
+    } catch (error) {
+      console.error("Error adding a test:", error);
+      alert("An error occurred. Please try again.");
+    }
+  };
+
 
   return (
     <>
@@ -132,6 +193,12 @@ export default function ComputerSciencePathway() {
               <p>Please enter your scores above to see your recommendations.</p>
             )}
           </div>
+
+          <button onClick={handleAddTestsToAccount} className={styles.button}>
+            Add Placement Tests to Account
+          </button>
+
+          {successMessage && <div style={{ color: "green", fontWeight: "bold", marginTop: "10px" }}>{successMessage}</div>}
 
           <div className={styles.flowchart}>
             <Image

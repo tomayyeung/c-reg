@@ -385,8 +385,20 @@
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
+.flowchart {
+    margin-top: 40px;
+    text-align: center;
+}
+
+.flowchartImage {
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    margin-top: 20px;
+}
+
 .results {
     margin-top: 20px;
+    margin-bottom: 20px;
     padding: 20px;
     background-color: #fff;
     border-radius: 8px;
@@ -401,17 +413,6 @@
 
 .results strong {
     color: var(--primary-color);
-}
-
-.flowchart {
-    margin-top: 40px;
-    text-align: center;
-}
-
-.flowchartImage {
-    border: 1px solid #ccc;
-    border-radius: 8px;
-    margin-top: 20px;
 }
 
 .results a {

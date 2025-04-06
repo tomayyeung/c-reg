@@ -12,12 +12,12 @@ const client = new MongoClient(uri);
 export async function POST(request: Request) {
     try {
         const body = await request.json();
-        const { username, apTestName, apTestScore } = body;
+        const { username, placementTestName, placementTestScore } = body;
 
         // Validate the request data
         if (!username || typeof username !== "string"
-            || !apTestName || typeof apTestName !== "string"
-            || !apTestScore || typeof apTestScore !== "number" || apTestScore < 1 || apTestScore > 5) {
+            || !placementTestName || typeof placementTestName !== "string"
+            || typeof placementTestScore !== "number" || placementTestScore < 0 || placementTestScore > 100) {
             return NextResponse.json({ error: "Invalid request data" }, { status: 400 });
         }
 
@@ -29,25 +29,25 @@ export async function POST(request: Request) {
         const user = await creditCollection.findOne({ user: username });
 
         if (user) {
-            // If user exists, update the apCredit array (add the AP test object without duplicates)
+            // If user exists, update the placementTests array (add the placement test object without duplicates)
             await creditCollection.updateOne(
                 { user: username },
-                { $addToSet: { apCredit: { testName: apTestName, testScore: apTestScore } } },    // Add unique AP test object
+                { $addToSet: { placementTests: { testName: placementTestName, testScore: placementTestScore } } },    // Add unique placement test object
             );
         } else {
             // If user doesn't exist, create a new document
             await creditCollection.insertOne({
                 user: username,
-                apCredit: [{ testName: apTestName, testScore: apTestScore }], // Add the AP test object
+                apCredit: [],
                 completedCourses: [],
-                placementTests: [],
+                placementTests: [{ testName: placementTestName, testScore: placementTestScore }], // Add the placement test object
             });
         }
 
-        return NextResponse.json({ success: true, message: "Successfully added AP credit to the account." }, { status: 201 });
+        return NextResponse.json({ success: true, message: "Successfully added placement test to the account." }, { status: 201 });
     } catch (error) {
-        console.error("Error adding AP credit:", error);
-        return NextResponse.json({ error: "Failed to add AP credit" }, { status: 500 });
+        console.error("Error adding placement test:", error);
+        return NextResponse.json({ error: "Failed to add placement test" }, { status: 500 });
     } finally {
         // Close the connection when done
         await client.close();
