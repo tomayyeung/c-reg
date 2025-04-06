@@ -63,6 +63,7 @@ export default function APCredit() {
   const [testName, setTestName] = useState<string>(apTests[0]);
   const [testScore, setTestScore] = useState<number>(1);
   const [earnedCredit, setEarnedCredit] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
 
   useEffect(() => {
@@ -121,11 +122,14 @@ export default function APCredit() {
         body: JSON.stringify({
           username,
           apTestName: testName,
-          apTestScore: testScore
+          apTestScore: testScore,
         }),
       });
 
-      if (!response.ok) {
+      if (response.ok) {
+        setSuccessMessage("AP Test successfully added to your account!");
+        setTimeout(() => setSuccessMessage(null), 5000); // Clear message after 5 seconds
+      } else {
         alert("Failed to add AP Test. Please try again.");
       }
     } catch (error) {
@@ -187,7 +191,6 @@ export default function APCredit() {
                 maxLength={1}
               />
             </div>
-
           </div>
 
           <div className={styles.results}>
@@ -197,6 +200,8 @@ export default function APCredit() {
           <button onClick={handleAddTestToAccount} className={styles.button}>
             Add AP Test to Account
           </button>
+
+          {successMessage && <div style={{ color: "green", fontWeight: "bold", marginTop: "10px" }}>{successMessage}</div>}
         </div>
       </div>
     </>
