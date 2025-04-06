@@ -239,7 +239,7 @@ export default function CourseCatalog() {
                         </span>
                       </h3>
                       <p className={styles["course-code"]}>
-                        {course.course_code}
+                        {course.number}
                       </p>
                       <p className={styles["course-college"]}>
                         {course.college}
