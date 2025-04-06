@@ -105,10 +105,29 @@ int handle_rm(int argc, char** argv, mongoc_client_t* client) {
     return rm(crn, plan, collection);    
 }
 
+int handle_rmplan(int argc, char** argv, mongoc_client_t* client) {
+    if (argc < 3) {
+        fprintf(stderr, "No argument found for creg rmplan\n");
+        return 1;
+    }
+    if (strcmp(argv[2], "main") == 0) {
+        fprintf(stderr, "Cannot remove main registration\n");
+        return 1;
+    }
+
+    mongoc_collection_t* collection = mongoc_client_get_collection(client, "c-reg_DB", "plans");
+    return rmplan(argv[2], collection);
+}
+
 int handle_view(int argc, char** argv, mongoc_client_t* client) {
     char* plan = argc > 2 ? argv[2] : "main";
     mongoc_collection_t* collection = mongoc_client_get_collection(client, "c-reg_DB", "plans");
     return view(plan, collection);    
+}
+
+int handle_viewplans(mongoc_client_t* client) {
+    mongoc_collection_t* collection = mongoc_client_get_collection(client, "c-reg_DB", "plans");
+    return viewplans(collection);
 }
 
 int handle_browse(int argc, char** argv, mongoc_client_t* client) {
@@ -274,8 +293,12 @@ int main(int argc, char** argv) {
         return handle_add(argc, argv, client);
     } else if (strcmp(command, "rm") == 0) {
         return handle_rm(argc, argv, client);
+    } else if (strcmp(command, "rmplan") == 0) {
+        return handle_rmplan(argc, argv, client);
     } else if (strcmp(command, "view") == 0) {
         return handle_view(argc, argv, client);
+    } else if (strcmp(command, "viewplans") == 0) {
+        return handle_viewplans(client);
     } else if (strcmp(command, "browse") == 0) {
         return handle_browse(argc, argv, client);
     } else if (strcmp(command, "logout") == 0) {

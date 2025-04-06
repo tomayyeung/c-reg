@@ -140,6 +140,43 @@ int rm(int crn, char* plan, mongoc_collection_t* collection) {
     return success ? 0 : 1;
 }
 
+int rmplan(const char *plan, mongoc_collection_t *collection) {
+    char* username = load_username();
+    if (username == NULL) {
+        fprintf(stderr, "Not logged in\n");
+        return 1;
+    }
+
+    bson_t *query = bson_new();
+    bson_t *update = bson_new();
+    bson_t child;
+    bson_error_t error;
+
+    // Build query: { "name": "thomas" }
+    BSON_APPEND_UTF8(query, "name", username);
+
+    // Build update: { $unset: { "plans.main": "" } }
+    char field_path[128];
+    snprintf(field_path, sizeof(field_path), "plans.%s", plan);
+
+    BSON_APPEND_DOCUMENT_BEGIN(update, "$unset", &child);
+    BSON_APPEND_UTF8(&child, field_path, "");  // Value doesn't matter
+    bson_append_document_end(update, &child);
+
+    // Run the update
+    bool success = mongoc_collection_update_one(
+        collection, query, update, NULL, NULL, &error
+    );
+
+    if (!success) {
+        fprintf(stderr, "Failed to remove plan '%s': %s\n", plan, error.message);
+    }
+
+    bson_destroy(query);
+    bson_destroy(update);
+    return success ? 0 : 1;
+}
+
 int view(char* plan, mongoc_collection_t* collection) {
     char* username = load_username();
     if (username == NULL) {
@@ -204,6 +241,50 @@ int view(char* plan, mongoc_collection_t* collection) {
     return found ? 0 : 1;
 }
 
+int viewplans(mongoc_collection_t* collection) {
+    char* username = load_username();
+    if (username == NULL) {
+        fprintf(stderr, "Not logged in\n");
+        return 1;
+    }
+
+    bson_t *query;
+    mongoc_cursor_t *cursor;
+    const bson_t *doc;
+    bson_iter_t iter, plans_iter;
+    bson_error_t error;
+
+    // Query: { name: "thomas" }
+    query = BCON_NEW("name", BCON_UTF8(username));
+    cursor = mongoc_collection_find_with_opts(collection, query, NULL, NULL);
+
+    if (!mongoc_cursor_next(cursor, &doc)) {
+        fprintf(stderr, "User '%s' not found or no plans.\n", username);
+        mongoc_cursor_destroy(cursor);
+        bson_destroy(query);
+        return 1;
+    }
+
+    // Navigate to "plans"
+    if (!(bson_iter_init_find(&iter, doc, "plans") &&
+          BSON_ITER_HOLDS_DOCUMENT(&iter) &&
+          bson_iter_recurse(&iter, &plans_iter))) {
+        fprintf(stderr, "'plans' field missing or invalid.\n");
+        mongoc_cursor_destroy(cursor);
+        bson_destroy(query);
+        return 1;
+    }
+
+    // Iterate and print all plan keys;
+    while (bson_iter_next(&plans_iter)) {
+        const char *plan_name = bson_iter_key(&plans_iter);
+        printf(" - %s\n", plan_name);
+    }
+
+    mongoc_cursor_destroy(cursor);
+    bson_destroy(query);
+    return 0;
+}
 
 int browse(char subject[5], char number[16], enum InstructionMode instruction_mode_search, int n_attrs, enum Attribute attrs[16], char instructor[256], int n_keywords, char** keywords, mongoc_collection_t* sections_collection, mongoc_collection_t* courses_collection) {
     // printf("start isntructon mode: %d\n", instruction_mode_search);
@@ -263,16 +344,15 @@ int browse(char subject[5], char number[16], enum InstructionMode instruction_mo
         }
         // printf("efghhere\n");
 
+        // search crn
+        int iter_crn;
+        if (bson_iter_init_find(&iter, reply, "crn") && BSON_ITER_HOLDS_INT32(&iter)) iter_crn = bson_iter_int32(&iter);
+
         // search instruction mode
         int iter_instruction_mode;
-        if (bson_iter_init_find(&iter, reply, "instruction_mode") && BSON_ITER_HOLDS_INT32(&iter)) {
-            int integer = bson_iter_int32(&iter);
-            // printf("reading int: %d\n", integer);
-            iter_instruction_mode = integer;
-        }
-        // printf("instruction mode right befiore check %d\n", instruction_mode_search);
+        if (bson_iter_init_find(&iter, reply, "instruction_mode") && BSON_ITER_HOLDS_INT32(&iter)) iter_instruction_mode = bson_iter_int32(&iter);
+
         if (instruction_mode_search != 3) {
-            // printf("instruciton mode if %d\n", instruction_mode_search);
             if (instruction_mode_search != iter_instruction_mode) continue;
         }
 
@@ -280,13 +360,10 @@ int browse(char subject[5], char number[16], enum InstructionMode instruction_mo
 
         // search instructor
         const char* iter_instructor_first;
-        if (bson_iter_init_find(&iter, reply, "instructor_first") && BSON_ITER_HOLDS_UTF8(&iter)) {
-            iter_instructor_first = bson_iter_utf8(&iter, NULL);
-        }
+        if (bson_iter_init_find(&iter, reply, "instructor_first") && BSON_ITER_HOLDS_UTF8(&iter)) iter_instructor_first = bson_iter_utf8(&iter, NULL);
         const char* iter_instructor_last;
-        if (bson_iter_init_find(&iter, reply, "instructor_last") && BSON_ITER_HOLDS_UTF8(&iter)) {
-            iter_instructor_last = bson_iter_utf8(&iter, NULL);
-        }
+        if (bson_iter_init_find(&iter, reply, "instructor_last") && BSON_ITER_HOLDS_UTF8(&iter)) iter_instructor_last = bson_iter_utf8(&iter, NULL);
+
         char instructor_name[256];
         sprintf(instructor_name, "%s %s", iter_instructor_first, iter_instructor_last);
         // printf("HERE instruction mode: %d\n", instruction_mode_search);
@@ -302,9 +379,7 @@ int browse(char subject[5], char number[16], enum InstructionMode instruction_mo
         const char* iter_sched_type;
         if (bson_iter_init_find(&iter, reply, "schedule_type") && BSON_ITER_HOLDS_UTF8(&iter)) iter_sched_type = bson_iter_utf8(&iter, NULL);
         int* iter_days;
-        if (bson_iter_init_find(&iter, reply, "days") && BSON_ITER_HOLDS_UTF8(&iter)) {
-            iter_days = days_str_to_arr(bson_iter_utf8(&iter, NULL));
-        }
+        if (bson_iter_init_find(&iter, reply, "days") && BSON_ITER_HOLDS_UTF8(&iter)) iter_days = days_str_to_arr(bson_iter_utf8(&iter, NULL));
         int iter_begin_time;
         if (bson_iter_init_find(&iter, reply, "begin_time") && BSON_ITER_HOLDS_INT32(&iter)) iter_begin_time = bson_iter_int32(&iter);
         int iter_end_time;
@@ -332,6 +407,7 @@ int browse(char subject[5], char number[16], enum InstructionMode instruction_mo
         struct Section *s = (struct Section*) malloc(sizeof(struct Section));
         s->course = course;
         s->section_num = iter_section_num;
+        s->crn = iter_crn;
         strcpy(s->schedule_type, iter_sched_type);
         // printf("xyzhere\n");
         // printf("instruction mode %d\n", instruction_mode_search);

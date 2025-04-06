@@ -87,6 +87,7 @@ enum InstructionMode {
 struct Section {
     struct Course* course;
     int section_num;
+    int crn;
     char schedule_type[256];
     enum InstructionMode instruction_mode;
     int* days; // eg MW = {1,0,1,0,0,0,0}
@@ -118,7 +119,11 @@ int add(int crn, char* plan, mongoc_collection_t* collection);
 
 int rm(int crn, char* plan, mongoc_collection_t* collection);
 
+int rmplan(const char* plan, mongoc_collection_t* collection);
+
 int view(char* plan, mongoc_collection_t* collection);
+
+int viewplans(mongoc_collection_t* collection);
 
 /**
  * displays results of browse - sections

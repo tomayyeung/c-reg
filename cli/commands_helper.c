@@ -166,7 +166,7 @@ void display_sections(int n_sections, struct Section** sections) {
         struct Course* c = s->course;
         char days[8];
         days_arr_to_str(days, s->days);
-        printf("%s%s-%d: %s %s %d-%d %s%s Mode: %s\n", 
-            c->subject, c->number, s->section_num, c->name, days, s->begin_time, s->end_time, s->building, s->room, instr_mode_to_str(s->instruction_mode));
+        printf("%d %s%s-%d: %s %s %d-%d %s%s Mode: %s\n", 
+            s->crn, c->subject, c->number, s->section_num, c->name, days, s->begin_time, s->end_time, s->building, s->room, instr_mode_to_str(s->instruction_mode));
     }
 }
