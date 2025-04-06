@@ -41,6 +41,16 @@ a {
   text-decoration: none;
 }
 
+h2 {
+  margin-top: 30px;
+  margin-bottom: 15px;
+}
+
+h3 {
+  margin-top: 15px;
+  margin-bottom: 12px;
+}
+
 /* Common Layout Elements */
 .container {
   max-width: var(--max-width);

@@ -245,7 +245,7 @@
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: 1rem;
-    margin-top: 1.5rem;
+    margin-top: 1rem;
     font-size: 1.1rem;
     list-style-type: disc;
 }
@@ -423,4 +423,10 @@
 .results a:hover {
     color: var(--primary-color-dark);
     text-decoration: none;
+}
+
+.link {
+    color: var(--primary-color);
+    text-decoration: underline;
+    transition: color 0.2s ease;
 }

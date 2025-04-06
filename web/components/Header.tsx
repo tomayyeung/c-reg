@@ -47,8 +47,8 @@ export default function Header() {
         <Link href="/ap-credit" className={styles.navButton}>
           AP Credit
         </Link>
-        <Link href="/pathways" className={styles.navButton}>
-          Pathways
+        <Link href="/placement-tests" className={styles.navButton}>
+          Placement Tests
         </Link>
         {username ? (
           <Link href="/" onClick={handleLogout} className={styles.navButton}>
