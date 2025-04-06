@@ -68,7 +68,7 @@ export default function RegisterPage() {
         <div className={styles.mainContent}>
           <div className={styles.grid}>
             {/* Prepare for Registration */}
-            <Link href="/register/prepare" className={styles.card}>
+            <Link href="/register-landing-page/registration-resources" className={styles.card}>
               <div className={styles.cardContent}>
                 <h2 className={styles.cardTitle}>Prepare for Registration</h2>
                 <p className={styles.cardSubtitle}>For Students only</p>
