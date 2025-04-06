@@ -187,8 +187,6 @@ int add_to_section(int crn, mongoc_collection_t* sections_collection, int additi
     
     if (!success) {
         fprintf(stderr, "Failed to decrement semester: %s\n", error.message);
-    } else {
-        printf("crn %d \n", crn);
     }
 
     bson_destroy(query);

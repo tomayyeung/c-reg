@@ -36,7 +36,6 @@ char *load_username() {
 
 void save_username(const char *username) {
     char *path = get_user_file_path();
-    // printf("path: %s\n", path);
     FILE *f = fopen(path, "w");
     if (!f) {
         perror("Could not save username");

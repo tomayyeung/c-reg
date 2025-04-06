@@ -9,7 +9,7 @@
 int art() {
     FILE *file = fopen("ascii.txt", "r");  // Open the file in read mode
     if (file == NULL) {
-        printf("Error opening file.\n");
+        fprintf(stderr, "Error opening file.\n");
         return 1;
     }
 
@@ -100,7 +100,6 @@ int add(int crn, char* plan, mongoc_collection_t* plans_collection, mongoc_colle
     // update db if working on main
     if (*plan == 0) {
         // find section, update enrollment
-        printf("working main\n");
         if (add_to_section(crn, sections_collection, 1)) {
             return 1;
         }
@@ -155,7 +154,6 @@ int rm(int crn, char* plan, mongoc_collection_t* plans_collection, mongoc_collec
     // update db if working on main
     if (*plan == 0) {
         // find section, update enrollment
-        printf("working main\n");
         if (add_to_section(crn, sections_collection, -1)) {
             return 1;
         }
@@ -601,7 +599,6 @@ int cbrowse(char subject[5], char number[16], int n_attrs, enum Attribute attrs[
         return 1;
     }
 
-    printf("num courss: %d\n", i);
     display_courses(i, courses, verbose);
 
     // Cleanup
