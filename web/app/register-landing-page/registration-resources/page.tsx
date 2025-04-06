@@ -7,15 +7,14 @@ import Header from "@/components/Header";
 
 interface Course {
   _id: string;
-  course_code: string;
+  subject: string;
+  number: string;
   course_title: string;
   units: string;
   description: string;
   prerequisites: string;
   restrictions: string;
   college: string;
-  // Optionally, you can add subject if needed:
-  // subject: string;
 }
 
 export default function CourseCatalog() {
@@ -231,7 +230,7 @@ export default function CourseCatalog() {
                   <div key={course._id} className={styles["course-card"]}>
                     <div className={styles["course-header"]}>
                       <h3 className={styles["course-title"]}>
-                        {course.course_title}
+                        {course.course_title} - {course.subject}: {course.number}
                         <span className={styles["units-badge"]}>
                           {course.units}{" "}
                           {Number.parseInt(course.units) === 1

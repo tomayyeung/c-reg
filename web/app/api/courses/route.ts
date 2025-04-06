@@ -31,6 +31,7 @@ export async function GET(request: Request) {
       (college) => college && typeof college === "string"
     );
 
+
     // Get all unique subject values for the filter dropdown
     const subjectsResult = await coursesCollection.distinct("subject"); // <--- NEW
     const subjects = subjectsResult.filter(
