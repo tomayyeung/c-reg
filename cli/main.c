@@ -122,7 +122,24 @@ int handle_rmplan(int argc, char** argv, mongoc_client_t* client) {
 }
 
 int handle_view(int argc, char** argv, mongoc_client_t* client) {
-    char* plan = argc > 2 ? argv[2] : "main";
+    char plan[256];
+    *plan = 0;
+
+    static struct option long_options[] = {
+        {"plan", required_argument, 0, 'p'},
+    };
+    const char* short_options = "p:";
+
+    int opt;
+    optind = 2; // skip program and command
+    while ((opt = getopt_long(argc, argv, short_options, long_options, NULL)) != -1) {
+        switch (opt) {
+            case 'p':
+                strncpy(plan,  optarg, 256);
+                break;
+        }
+    }
+
     mongoc_collection_t* collection = mongoc_client_get_collection(client, "c-reg_DB", "plans");
     return view(plan, collection);    
 }
@@ -261,9 +278,33 @@ int handle_apply(int argc, char** argv, mongoc_client_t* client) {
         return 1;
     }
 
-
     mongoc_collection_t* collection = mongoc_client_get_collection(client, "c-reg_DB", "plans");
     return apply(argv[2], collection);
+}
+
+int handle_schedule(int argc, char** argv, mongoc_client_t* client) {
+    char plan[256];
+    *plan = 0;
+
+    static struct option long_options[] = {
+        {"plan", required_argument, 0, 'p'},
+    };
+    const char* short_options = "p:";
+
+    int opt;
+    optind = 2; // skip program and command
+    while ((opt = getopt_long(argc, argv, short_options, long_options, NULL)) != -1) {
+        switch (opt) {
+            case 'p':
+                strncpy(plan,  optarg, 256);
+                break;
+        }
+    }
+    
+    mongoc_collection_t* courses_collection = mongoc_client_get_collection(client, "c-reg_DB", "courses");
+    mongoc_collection_t* plans_collection = mongoc_client_get_collection(client, "c-reg_DB", "plans");
+    mongoc_collection_t* sections_collection = mongoc_client_get_collection(client, "c-reg_DB", "sections");
+    return schedule(plan, courses_collection, plans_collection, sections_collection);
 }
 
 int main(int argc, char** argv) {
@@ -307,6 +348,8 @@ int main(int argc, char** argv) {
         return handle_logout();
     } else if (strcmp(command, "apply") == 0) {
         return handle_apply(argc, argv, client);
+    } else if (strcmp(command, "schedule") == 0) {
+        return handle_schedule(argc, argv, client);
     }
     else {
         fprintf(stderr, "Unknown command: %s\n", command);

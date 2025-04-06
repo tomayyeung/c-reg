@@ -106,7 +106,6 @@ void free_hash_table(HashTable *ht) {
 
 HashTable* init_courses(mongoc_collection_t* courses_collection) {
     HashTable* courses_map = create_hash_table();
-    // printf("created hash table\n");
 
     // Create a filter BSON document (empty filter means all documents)
     bson_t *filter = bson_new();  // Empty filter to fetch all documents
@@ -115,7 +114,6 @@ HashTable* init_courses(mongoc_collection_t* courses_collection) {
 
     // Perform the find operation
     mongoc_cursor_t *cursor = mongoc_collection_find_with_opts(courses_collection, filter, NULL, NULL);
-
 
     // Iterate over the cursor
     while (mongoc_cursor_next(cursor, &reply)) {
@@ -129,7 +127,7 @@ HashTable* init_courses(mongoc_collection_t* courses_collection) {
         const char* number;
         if (bson_iter_init_find(&iter, reply, "number") && BSON_ITER_HOLDS_UTF8(&iter)) number = bson_iter_utf8(&iter, NULL);
         const char* name;
-        if (bson_iter_init_find(&iter, reply, "name") && BSON_ITER_HOLDS_UTF8(&iter)) name = bson_iter_utf8(&iter, NULL);
+        if (bson_iter_init_find(&iter, reply, "course_title") && BSON_ITER_HOLDS_UTF8(&iter)) name = bson_iter_utf8(&iter, NULL);
         // printf("subject: %s number: %s name: %s\n", subject, number, name);
 
         struct Course* c = (struct Course*) malloc(sizeof(struct Course));

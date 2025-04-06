@@ -74,14 +74,12 @@ int add(int crn, char* plan, mongoc_collection_t* plans_collection, mongoc_colle
         return 1;
     }
 
+    char working_plan[256];
+    if (*plan == 0) strcpy(working_plan, "main");
+    else strcpy(working_plan, plan);
+
     bson_t *query, *update, child;
     bson_error_t error;
-
-    char working_plan[256];
-    if (*plan == 0) {
-        strcpy(working_plan, "main");
-    }
-    else strcpy(working_plan, plan);
 
     // check if plan already contains crn
     if (crn_exists(crn, username, working_plan, plans_collection)) {
@@ -222,6 +220,10 @@ int view(char* plan, mongoc_collection_t* collection) {
         return 1;
     }
 
+    char working_plan[256];
+    if (*plan == 0) strcpy(working_plan, "main");
+    else strcpy(working_plan, plan);
+
     bson_t *query;
     mongoc_cursor_t *cursor;
     const bson_t *doc;
@@ -252,11 +254,11 @@ int view(char* plan, mongoc_collection_t* collection) {
 
     bool found = false;
     while (bson_iter_next(&plans_iter)) {
-        if (strcmp(bson_iter_key(&plans_iter), plan) == 0 &&
+        if (strcmp(bson_iter_key(&plans_iter), working_plan) == 0 &&
             BSON_ITER_HOLDS_ARRAY(&plans_iter)) {
             found = true;
             if (bson_iter_recurse(&plans_iter, &array_iter)) {
-                printf("Plan '%s':\n", plan);
+                printf("Plan '%s':\n", working_plan);
                 while (bson_iter_next(&array_iter)) {
                     if (BSON_ITER_HOLDS_INT32(&array_iter)) {
                         printf(" - %d\n", bson_iter_int32(&array_iter));
@@ -582,5 +584,121 @@ int apply(char* plan, mongoc_collection_t *collection) {
 }
 
 int cbrowse(char subject[5], int number, char name[256], enum Attribute attrs[16], int n_keywords, char** keywords) {
+    return 0;
+}
+
+int schedule(char* plan, mongoc_collection_t* courses_collection, mongoc_collection_t* plans_collection, mongoc_collection_t* sections_collection) {
+    char* username = load_username();
+    if (username == NULL) {
+        fprintf(stderr, "Not logged in\n");
+        return 1;
+    }
+
+    char working_plan[256];
+    if (*plan == 0) strcpy(working_plan, "main");
+    else strcpy(working_plan, plan);
+
+    HashTable* courses_map = init_courses(courses_collection);
+    struct Section* sections[16];
+    int sectionsI = 0;
+
+    bson_t *query = bson_new();
+    bson_error_t error;
+
+    // Query to search for the plan document by name
+    BSON_APPEND_UTF8(query, "name", username);
+
+    // Perform the query to find the document
+    mongoc_cursor_t *cursor = mongoc_collection_find_with_opts(plans_collection, query, NULL, NULL);
+    const bson_t *doc;
+
+    if (!mongoc_cursor_next(cursor, &doc)) {
+        fprintf(stderr, "No plans found for user: %s\n", username);
+        mongoc_cursor_destroy(cursor);
+        bson_destroy(query);
+        return 1;
+    }
+
+    // Access the "plans" sub-document
+    bson_iter_t iter;
+    if (!bson_iter_init_find(&iter, doc, "plans") || !BSON_ITER_HOLDS_DOCUMENT(&iter)) {
+        fprintf(stderr, "Plans field not found or not a document.\n");
+        mongoc_cursor_destroy(cursor);
+        bson_destroy(query);
+        return 1;
+    }
+
+    // Extract the "plans" sub-document using bson_iter_document()
+    const uint8_t *data;
+    uint32_t length;
+    bson_iter_document(&iter, &length, &data);  // Extract document data and length
+
+    // Initialize a bson_t from the extracted data
+    bson_t plans_doc;
+    bson_init_static(&plans_doc, data, length);
+
+    // Access the array inside the "plans" sub-document
+    if (!bson_iter_init_find(&iter, &plans_doc, working_plan) || !BSON_ITER_HOLDS_ARRAY(&iter)) {
+        fprintf(stderr, "Array not found or not an array.\n");
+        mongoc_cursor_destroy(cursor);
+        bson_destroy(query);
+        return 1;
+    }
+
+    // Iterate through the array elements
+    bson_iter_t array_iter;
+    if (BSON_ITER_HOLDS_ARRAY(&iter)) {
+        bson_iter_recurse(&iter, &array_iter);  // Initialize an array iterator
+        
+        // Loop through the array
+        while (bson_iter_next(&array_iter)) {
+            if (BSON_ITER_HOLDS_INT32(&array_iter)) {
+                // printf("here\n");
+                sections[sectionsI++] = crn_to_section(bson_iter_int32(&array_iter), sections_collection, courses_map);
+                // printf("there\n");
+            }
+        }
+    } else {
+        fprintf(stderr, "Main array is not of array type.\n");
+        mongoc_cursor_destroy(cursor);
+        bson_destroy(query);
+        return 1;
+    }
+
+    // cleanup
+    mongoc_cursor_destroy(cursor);
+    bson_destroy(query);
+
+    // sort sections for each day
+    int num_sections_by_day[7] = {0, 0, 0, 0, 0, 0, 0};
+    struct Section* sections_by_day[7][16];
+    for (int i = 0; i < 7; i++) { // i: day
+        for (int j = 0; j < sectionsI; j++) { // j: index of section
+            struct Section* s = sections[j];
+
+            if (s->days[i]) {
+                if (num_sections_by_day[i] >= 16) {
+                    fprintf(stderr, "Cannot display this many sections in schedule\n");
+                    return 1;
+                }
+                sections_by_day[i][num_sections_by_day[i]] = s;
+                num_sections_by_day[i] += 1;
+            }
+        }
+
+        qsort(sections_by_day[i], num_sections_by_day[i], sizeof(struct Section*), compare_section_times);
+    }
+
+    char* days[7] = {"Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"};
+    for (int i = 0; i < 7; i++) { // i: day
+        printf("%s:\n", days[i]);
+
+        for (int j = 0; j < num_sections_by_day[i]; j++) { // j: index of section
+            display_section(sections_by_day[i][j]);
+        }
+
+        printf("\n");
+    }
+
     return 0;
 }

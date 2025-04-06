@@ -1,9 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <termios.h>
+#include <bson.h>
+#include <mongoc.h>
 
 #include "commands.h"
 #include "commands_helper.h"
+#include "sections.h"
 
 // makes a string lowercase in place
 void to_lower(char* s) {
@@ -159,15 +162,18 @@ void days_arr_to_str(char* buf, int* a) {
 
 }
 
+void display_section(struct Section* s) {
+    struct Course* c = s->course;
+    char days[8];
+    days_arr_to_str(days, s->days);
+    printf("%d %s%s-%d: %s %s %d-%d %s%s Mode: %s\n", 
+        s->crn, c->subject, c->number, s->section_num, c->name, days, s->begin_time, s->end_time, s->building, s->room, instr_mode_to_str(s->instruction_mode));
+}
+
 void display_sections(int n_sections, struct Section** sections) {
     // printf("nsections: %d\n", n_sections);
     for (int i = 0; i < n_sections; i++) {
-        struct Section* s = sections[i];
-        struct Course* c = s->course;
-        char days[8];
-        days_arr_to_str(days, s->days);
-        printf("%d %s%s-%d: %s %s %d-%d %s%s Mode: %s\n", 
-            s->crn, c->subject, c->number, s->section_num, c->name, days, s->begin_time, s->end_time, s->building, s->room, instr_mode_to_str(s->instruction_mode));
+        display_section(sections[i]);
     }
 }
 
@@ -211,17 +217,6 @@ int crn_exists(int crn, char* username, char* plan, mongoc_collection_t* plans_c
     bson_t *query = bson_new();
     bson_t *filter = bson_new();
 
-    // // Query to check if the specific plan contains the crn
-    // BSON_APPEND_UTF8(query, "name", username);
-    // char plan_field[256];
-    // snprintf(plan_field, sizeof(plan_field), "plans.%s.crn", plan);  // Example: "plans.main.crn"
-    // BSON_APPEND_INT32(query, plan_field, crn);  // Match crn in the specified plan
-
-    // // Perform the query
-    // mongoc_cursor_t *cursor = mongoc_collection_find_with_opts(plans_collection, query, NULL, NULL);
-    // const bson_t *doc;
-
-
     // Query to check if the crn exists in the plans array
     BSON_APPEND_UTF8(query, "name", username);
     char plan_field[256];
@@ -239,4 +234,98 @@ int crn_exists(int crn, char* username, char* plan, mongoc_collection_t* plans_c
         break;  // We found the crn in the plan, no need to continue
     }
     return found;
+}
+
+struct Section* crn_to_section(int crn, mongoc_collection_t* sections_collection, HashTable* courses_map) {
+    bson_t *query = bson_new();
+    bson_t *filter = bson_new();
+
+    // Query to check if the crn exists in the plans array
+    BSON_APPEND_INT32(query, "crn", crn);
+
+    // Perform the query
+    mongoc_cursor_t *cursor = mongoc_collection_find_with_opts(sections_collection, query, NULL, NULL);
+    const bson_t *reply;
+
+    while (mongoc_cursor_next(cursor, &reply)) {
+        bson_iter_t iter;
+
+        const char* iter_course = NULL;
+        if (bson_iter_init_find(&iter, reply, "course") && BSON_ITER_HOLDS_UTF8(&iter)) iter_course = bson_iter_utf8(&iter, NULL);
+        struct Course* c = course_from_section(courses_map, iter_course);
+
+        int iter_section_num;
+        if (bson_iter_init_find(&iter, reply, "section_num") && BSON_ITER_HOLDS_INT32(&iter)) iter_section_num = bson_iter_int32(&iter);
+        int iter_crn;
+        if (bson_iter_init_find(&iter, reply, "crn") && BSON_ITER_HOLDS_INT32(&iter)) iter_crn = bson_iter_int32(&iter);
+        const char* iter_sched_type;
+        if (bson_iter_init_find(&iter, reply, "schedule_type") && BSON_ITER_HOLDS_UTF8(&iter)) iter_sched_type = bson_iter_utf8(&iter, NULL);
+        int iter_instruction_mode;
+        if (bson_iter_init_find(&iter, reply, "instruction_mode") && BSON_ITER_HOLDS_INT32(&iter)) iter_instruction_mode = bson_iter_int32(&iter);
+        int* iter_days;
+        if (bson_iter_init_find(&iter, reply, "days") && BSON_ITER_HOLDS_UTF8(&iter)) iter_days = days_str_to_arr(bson_iter_utf8(&iter, NULL));
+        int iter_begin_time;
+        if (bson_iter_init_find(&iter, reply, "begin_time") && BSON_ITER_HOLDS_INT32(&iter)) iter_begin_time = bson_iter_int32(&iter);
+        int iter_end_time;
+        if (bson_iter_init_find(&iter, reply, "end_time") && BSON_ITER_HOLDS_INT32(&iter)) iter_end_time = bson_iter_int32(&iter);
+        const char* iter_start_date;
+        if (bson_iter_init_find(&iter, reply, "start_date") && BSON_ITER_HOLDS_UTF8(&iter)) iter_start_date = bson_iter_utf8(&iter, NULL);
+        const char* iter_end_date;
+        if (bson_iter_init_find(&iter, reply, "end_date") && BSON_ITER_HOLDS_UTF8(&iter)) iter_end_date = bson_iter_utf8(&iter, NULL);
+        const char* iter_building;
+        if (bson_iter_init_find(&iter, reply, "building") && BSON_ITER_HOLDS_UTF8(&iter)) iter_building = bson_iter_utf8(&iter, NULL);
+        const char* iter_room;
+        if (bson_iter_init_find(&iter, reply, "room") && BSON_ITER_HOLDS_UTF8(&iter)) iter_room = bson_iter_utf8(&iter, NULL);
+        int iter_capacity;
+        if (bson_iter_init_find(&iter, reply, "capacity") && BSON_ITER_HOLDS_INT32(&iter)) iter_capacity = bson_iter_int32(&iter);
+        int iter_enrollment;
+        const char* iter_instructor_first;
+        if (bson_iter_init_find(&iter, reply, "instructor_first") && BSON_ITER_HOLDS_UTF8(&iter)) iter_instructor_first = bson_iter_utf8(&iter, NULL);
+        const char* iter_instructor_last;
+        if (bson_iter_init_find(&iter, reply, "instructor_last") && BSON_ITER_HOLDS_UTF8(&iter)) iter_instructor_last = bson_iter_utf8(&iter, NULL);
+        if (bson_iter_init_find(&iter, reply, "enrollment") && BSON_ITER_HOLDS_INT32(&iter)) iter_enrollment = bson_iter_int32(&iter);
+        const char* iter_instructor_email;
+        if (bson_iter_init_find(&iter, reply, "instructor_email") && BSON_ITER_HOLDS_UTF8(&iter)) iter_instructor_email = bson_iter_utf8(&iter, NULL);
+        const char* iter_college;
+        if (bson_iter_init_find(&iter, reply, "college") && BSON_ITER_HOLDS_UTF8(&iter)) iter_college = bson_iter_utf8(&iter, NULL);
+        
+        // search keywords
+        struct Section *s = (struct Section*) malloc(sizeof(struct Section));
+        s->course = c;
+        s->section_num = iter_section_num;
+        s->crn = iter_crn;
+        strcpy(s->schedule_type, iter_sched_type);
+        s->instruction_mode = (enum InstructionMode)(iter_instruction_mode);
+        s->days = iter_days;
+        s->begin_time = iter_begin_time;
+        s->end_time = iter_end_time;
+        strcpy(s->start_date, iter_start_date);
+        strcpy(s->end_date, iter_end_date);
+        strcpy(s->building, iter_building);
+        strcpy(s->room, iter_room);
+        s->capacity = iter_capacity;
+        s->enrollment = iter_enrollment;
+        strcpy(s->instructor_first, iter_instructor_first);
+        strcpy(s->instructor_last, iter_instructor_last);
+        strcpy(s->instructor_email, iter_instructor_email);
+        strcpy(s->college, iter_college);
+        
+        return s;
+    }
+
+    return 0;
+}
+
+int compare_section_times(const void *a, const void *b) {
+    const struct Section* s1 = *(const struct Section**)a;
+    const struct Section* s2 = *(const struct Section**)b;
+
+    printf("s1: %s begin: %d end: %d\n", s1->course->name, s1->begin_time, s1->end_time);
+    printf("s2: %s begin: %d end: %d\n", s2->course->name, s2->begin_time, s2->end_time);
+
+    if (s1->begin_time < s2->begin_time) return -1;
+    if (s1->begin_time > s2->begin_time) return 1;
+    if (s1->end_time < s2->end_time) return -1;
+    if (s1->end_time > s2->end_time) return 1;
+    return 0;
 }

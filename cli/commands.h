@@ -74,7 +74,7 @@ struct Course {
     const char* subject;
     const char* number;
     const char* name;
-    enum Attribute attributes[16];
+    // enum Attribute attributes[16];
 };
 
 enum InstructionMode {
@@ -154,6 +154,6 @@ int degree();
  * displays weekly schedule
  * returns 1 if error
  */
-int schedule(int format);
+int schedule(char* plan, mongoc_collection_t* courses_collection, mongoc_collection_t* plans_collection, mongoc_collection_t* sections_collection);
 
 #endif
