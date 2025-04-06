@@ -1,12 +1,18 @@
 import { MongoClient } from "mongodb"
 import { NextResponse } from "next/server"
+import dotenv from "dotenv";
+
+dotenv.config();
 
 export async function POST(request: Request) {
   try {
     const { username, password } = await request.json()
 
     // Connect to MongoDB
-    const uri = "mongodb+srv://leozhang2024:bzZhMIdXY8hDYXxe@course-reg-cluster.pyj2eqo.mongodb.net/?retryWrites=true&w=majority&appName=course-reg-cluster"
+    const uri = process.env.MONGODB_URI;
+    if (!uri) {
+      throw new Error("Env not configured with MONGODB_URI");
+    }
     const client = new MongoClient(uri)
     await client.connect()
 

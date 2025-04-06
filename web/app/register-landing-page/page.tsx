@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import styles from "./page.module.css";
+import ChatBot from "@/components/ChatBot";
 
 export default function RegisterPage() {
   const [username, setUsername] = useState<string | null>(null);
@@ -16,7 +17,7 @@ export default function RegisterPage() {
     // Check if user is logged in
     const currentUser = localStorage.getItem("currentUser");
     if (!currentUser) {
-      router.push("/");
+      router.push("/login");
       return;
     }
 
@@ -37,6 +38,7 @@ export default function RegisterPage() {
 
   return (
     <>
+      <ChatBot />
       <Header />
       <div className={styles.pageLayout}>
         <div className={styles.sideBar}>
@@ -90,7 +92,7 @@ export default function RegisterPage() {
             </Link>
 
             {/* Register for Classes */}
-            <Link href="/register/classes" className={styles.card}>
+            <Link href="/register-landing-page/register" className={styles.card}>
               <div className={styles.cardContent}>
                 <h2 className={styles.cardTitle}>Register for Classes</h2>
                 <p className={styles.cardSubtitle}>For Students only</p>

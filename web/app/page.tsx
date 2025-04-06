@@ -35,7 +35,7 @@ export default function Home() {
                     <Link href="/first-years" className={styles.primaryCta}>
                       First Year Guide
                     </Link>
-                    <Link href="/register" className={styles.secondaryCta}>
+                    <Link href="/register-landing-page" className={styles.secondaryCta}>
                       Register for Courses
                     </Link>
                   </div>
