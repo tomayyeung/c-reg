@@ -5,7 +5,7 @@
 void print_help() {
     printf("Usage: creg [-h | --help] <command> [<args>]");
     printf("\nCommands:\n");
-    printf("  art       craig");
+    printf("  art       craig\n");
     printf("  login     Login using your USF ID\n");
     printf("  logout    Log out from creg\n");
     printf("  add       Add a section to main or plan\n");
@@ -16,7 +16,6 @@ void print_help() {
     printf("  browse    Search for classes offered this semester\n");
     printf("  apply     Add all for sections in a plan to main registration\n");
     printf("  cbrowse   Browse catalog for all USF courses\n");
-    // printf("  degree    Show degree progress\n");
     printf("  schedule  Show weekly schedule of main or plan\n");
 }
 
@@ -73,7 +72,7 @@ void print_help_browse() {
     printf("    [-I | --instruction<instrmethod>] searches for the given instructional method: InPerson, Online, Hybrid.\n");
     printf("    [-a | --attributes<attributes>] to be added\n");
     printf("    [-i | --instructor<name>] searches for the given instructor name. Place the name inside quotes, eg \"Paul Haskell\".\n");
-    printf("    [-k | --keywords<keywords>] to be added\n");
+    printf("    [-k | --keywords<keywords>] search for particular keywords\n");
 }
 
 void print_help_apply() {
@@ -88,7 +87,7 @@ void print_help_cbrowse() {
     printf("    [-s | --subject<subject>] searches for the given subject, eg CS.\n");
     printf("    [-n | --number<number>] searches for a specified course number, eg 221 for CS 221.\n");
     printf("    [-a | --attributes<attributes>] to be added\n");
-    printf("    [-k | --keywords<keywords>] to be added\n");
+    printf("    [-k | --keywords<keywords>] search for particular keywords\n");
     printf("    [-v | --verbose] gives more information for each course\n");
 }
 

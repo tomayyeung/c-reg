@@ -151,11 +151,6 @@ int apply(char* plan, mongoc_collection_t* plans_collection);
  */
 int cbrowse(char subject[5], char number[16], int n_attrs, enum Attribute attrs[16], int n_keywords, char** keywords, int verbose, mongoc_collection_t* courses_collection);
 
-/**
- * displays degree progress
- * returns 1 if error
- */
-int degree();
 
 /**
  * displays weekly schedule
