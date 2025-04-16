@@ -13,3 +13,5 @@ website only
 
 website & cli
 - course registration
+
+[link to website repo](https://github.com/nishoof/creg-web)
